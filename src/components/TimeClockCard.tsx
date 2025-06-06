@@ -2,8 +2,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, MapPin, Wifi, WifiOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Clock, MapPin, Wifi, WifiOff, Coffee, LogIn, LogOut, Utensils } from "lucide-react";
+import { useTimeTracking } from "@/hooks/useTimeTracking";
 
 interface TimeClockCardProps {
   currentUser: {
@@ -17,8 +18,9 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [lastClockIn, setLastClockIn] = useState<Date | null>(null);
-  const { toast } = useToast();
+  
+  const { getTodayEntry, clockIn, lunchOut, lunchIn, clockOut, calculateHours } = useTimeTracking(currentUser);
+  const todayEntry = getTodayEntry();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -31,7 +33,6 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Get user location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -53,44 +54,31 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
     };
   }, []);
 
-  const handleClockIn = () => {
-    const now = new Date();
-    setLastClockIn(now);
-    
-    // Simulate saving to database
-    const clockData = {
-      userId: currentUser.name,
-      timestamp: now.toISOString(),
-      location: location,
-      type: 'clock-in',
-      isOnline: isOnline
-    };
-
-    console.log("Clock in data:", clockData);
-
-    toast({
-      title: "Ponto registrado",
-      description: `Entrada registrada às ${now.toLocaleTimeString()}`,
-    });
+  const getStatusBadge = () => {
+    switch (todayEntry.status) {
+      case 'not-started':
+        return <Badge variant="secondary">Não iniciado</Badge>;
+      case 'clocked-in':
+        return <Badge className="bg-green-100 text-green-800">Trabalhando</Badge>;
+      case 'lunch-break':
+        return <Badge className="bg-yellow-100 text-yellow-800">Almoço</Badge>;
+      case 'lunch-return':
+        return <Badge className="bg-blue-100 text-blue-800">Retornou do almoço</Badge>;
+      case 'clocked-out':
+        return <Badge className="bg-gray-100 text-gray-800">Finalizado</Badge>;
+    }
   };
 
-  const handleClockOut = () => {
-    const now = new Date();
-    
-    const clockData = {
-      userId: currentUser.name,
-      timestamp: now.toISOString(),
-      location: location,
-      type: 'clock-out',
-      isOnline: isOnline
-    };
+  const formatHours = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.floor((hours - h) * 60);
+    return `${h}h ${m}m`;
+  };
 
-    console.log("Clock out data:", clockData);
-
-    toast({
-      title: "Ponto registrado",
-      description: `Saída registrada às ${now.toLocaleTimeString()}`,
-    });
+  const getHoursBalance = () => {
+    const { totalHours } = calculateHours(todayEntry);
+    const balance = totalHours - 9; // 9 horas obrigatórias
+    return balance;
   };
 
   return (
@@ -117,18 +105,21 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-2 text-sm">
-            {isOnline ? (
-              <>
-                <Wifi className="w-4 h-4 text-green-500" />
-                <span className="text-green-600">Online</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="w-4 h-4 text-orange-500" />
-                <span className="text-orange-600">Offline (será sincronizado)</span>
-              </>
-            )}
+          <div className="flex items-center justify-center gap-4">
+            <div className="flex items-center gap-2 text-sm">
+              {isOnline ? (
+                <>
+                  <Wifi className="w-4 h-4 text-green-500" />
+                  <span className="text-green-600">Online</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-4 h-4 text-orange-500" />
+                  <span className="text-orange-600">Offline</span>
+                </>
+              )}
+            </div>
+            {getStatusBadge()}
           </div>
 
           {location && (
@@ -138,26 +129,43 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <Button 
-              onClick={handleClockIn}
-              className="bg-green-600 hover:bg-green-700 h-12"
+              onClick={clockIn}
+              disabled={!!todayEntry.clockIn}
+              className="bg-green-600 hover:bg-green-700 h-12 flex items-center gap-2"
             >
+              <LogIn className="w-4 h-4" />
               ENTRADA
             </Button>
+            
             <Button 
-              onClick={handleClockOut}
-              className="bg-red-600 hover:bg-red-700 h-12"
+              onClick={lunchOut}
+              disabled={!todayEntry.clockIn || !!todayEntry.lunchOut}
+              className="bg-yellow-600 hover:bg-yellow-700 h-12 flex items-center gap-2"
             >
+              <Utensils className="w-4 h-4" />
+              ALMOÇO
+            </Button>
+            
+            <Button 
+              onClick={lunchIn}
+              disabled={!todayEntry.lunchOut || !!todayEntry.lunchIn}
+              className="bg-blue-600 hover:bg-blue-700 h-12 flex items-center gap-2"
+            >
+              <Coffee className="w-4 h-4" />
+              RETORNO
+            </Button>
+            
+            <Button 
+              onClick={clockOut}
+              disabled={!todayEntry.clockIn || !!todayEntry.clockOut}
+              className="bg-red-600 hover:bg-red-700 h-12 flex items-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
               SAÍDA
             </Button>
           </div>
-
-          {lastClockIn && (
-            <div className="text-center text-sm text-gray-600">
-              Última entrada: {lastClockIn.toLocaleString()}
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -168,12 +176,18 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <div className="text-2xl font-bold text-gray-800">8h 30m</div>
+              <div className="text-2xl font-bold text-gray-800">
+                {formatHours(calculateHours(todayEntry).totalHours)}
+              </div>
               <div className="text-sm text-gray-600">Horas Trabalhadas</div>
             </div>
             <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">30m</div>
-              <div className="text-sm text-gray-600">Horas Extras</div>
+              <div className={`text-2xl font-bold ${getHoursBalance() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {getHoursBalance() >= 0 ? '+' : ''}{formatHours(Math.abs(getHoursBalance()))}
+              </div>
+              <div className="text-sm text-gray-600">
+                {getHoursBalance() >= 0 ? 'Horas Extras' : 'Horas Negativas'}
+              </div>
             </div>
           </div>
 
@@ -182,21 +196,34 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span>Entrada:</span>
-                <span className="font-medium">08:00</span>
+                <span className={`font-medium ${todayEntry.clockIn ? '' : 'text-gray-400'}`}>
+                  {todayEntry.clockIn || '--:--'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Almoço (Saída):</span>
-                <span className="font-medium">12:00</span>
+                <span className={`font-medium ${todayEntry.lunchOut ? '' : 'text-gray-400'}`}>
+                  {todayEntry.lunchOut || '--:--'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Almoço (Volta):</span>
-                <span className="font-medium">13:00</span>
+                <span className={`font-medium ${todayEntry.lunchIn ? '' : 'text-gray-400'}`}>
+                  {todayEntry.lunchIn || '--:--'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Saída:</span>
-                <span className="font-medium text-gray-400">--:--</span>
+                <span className={`font-medium ${todayEntry.clockOut ? '' : 'text-gray-400'}`}>
+                  {todayEntry.clockOut || '--:--'}
+                </span>
               </div>
             </div>
+          </div>
+
+          <div className="text-center">
+            <div className="text-lg font-semibold text-gray-800">Status Atual</div>
+            <div className="mt-2">{getStatusBadge()}</div>
           </div>
         </CardContent>
       </Card>

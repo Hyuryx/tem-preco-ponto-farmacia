@@ -6,22 +6,53 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Settings, Users, Building, Clock, Shield, Database } from "lucide-react";
+import { useSettings } from "@/hooks/useSettings";
+import { useToast } from "@/hooks/use-toast";
 
 export const AdminPanel = () => {
-  const [settings, setSettings] = useState({
-    automaticSync: true,
-    geoLocation: true,
-    darkMode: false,
-    multiCompany: true,
-    offlineMode: true,
-    auditLog: true,
-    smartReminder: true,
-    antifraud: true
-  });
+  const { settings, updateSetting } = useSettings();
+  const { toast } = useToast();
+  const [companies, setCompanies] = useState([
+    { id: '1', name: 'TEM PREÇO - Matriz', cnpj: '12.345.678/0001-90' },
+    { id: '2', name: 'TEM PREÇO - Filial Norte', cnpj: '12.345.678/0002-71' }
+  ]);
+  const [newCompany, setNewCompany] = useState({ name: '', cnpj: '' });
+  const [newUser, setNewUser] = useState({ name: '', email: '', role: 'employee' });
 
-  const handleSettingChange = (key: string, value: boolean) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+  const handleAddCompany = () => {
+    if (!newCompany.name || !newCompany.cnpj) return;
+    
+    const company = {
+      id: Date.now().toString(),
+      name: newCompany.name,
+      cnpj: newCompany.cnpj
+    };
+    
+    setCompanies(prev => [...prev, company]);
+    setNewCompany({ name: '', cnpj: '' });
+    toast({
+      title: "Empresa adicionada",
+      description: `${company.name} foi adicionada com sucesso.`,
+    });
+  };
+
+  const handleAddUser = () => {
+    if (!newUser.name || !newUser.email) return;
+    
+    toast({
+      title: "Usuário adicionado",
+      description: `${newUser.name} foi adicionado como ${newUser.role === 'admin' ? 'administrador' : 'funcionário'}.`,
+    });
+    setNewUser({ name: '', email: '', role: 'employee' });
+  };
+
+  const handleSaveSchedule = () => {
+    toast({
+      title: "Configurações salvas",
+      description: "Horários de trabalho atualizados com sucesso.",
+    });
   };
 
   return (
@@ -55,7 +86,7 @@ export const AdminPanel = () => {
                     </div>
                     <Switch
                       checked={settings.automaticSync}
-                      onCheckedChange={(checked) => handleSettingChange('automaticSync', checked)}
+                      onCheckedChange={(checked) => updateSetting('automaticSync', checked)}
                     />
                   </div>
 
@@ -68,7 +99,7 @@ export const AdminPanel = () => {
                     </div>
                     <Switch
                       checked={settings.geoLocation}
-                      onCheckedChange={(checked) => handleSettingChange('geoLocation', checked)}
+                      onCheckedChange={(checked) => updateSetting('geoLocation', checked)}
                     />
                   </div>
 
@@ -81,7 +112,7 @@ export const AdminPanel = () => {
                     </div>
                     <Switch
                       checked={settings.darkMode}
-                      onCheckedChange={(checked) => handleSettingChange('darkMode', checked)}
+                      onCheckedChange={(checked) => updateSetting('darkMode', checked)}
                     />
                   </div>
 
@@ -94,7 +125,7 @@ export const AdminPanel = () => {
                     </div>
                     <Switch
                       checked={settings.multiCompany}
-                      onCheckedChange={(checked) => handleSettingChange('multiCompany', checked)}
+                      onCheckedChange={(checked) => updateSetting('multiCompany', checked)}
                     />
                   </div>
                 </div>
@@ -109,7 +140,7 @@ export const AdminPanel = () => {
                     </div>
                     <Switch
                       checked={settings.offlineMode}
-                      onCheckedChange={(checked) => handleSettingChange('offlineMode', checked)}
+                      onCheckedChange={(checked) => updateSetting('offlineMode', checked)}
                     />
                   </div>
 
@@ -122,7 +153,7 @@ export const AdminPanel = () => {
                     </div>
                     <Switch
                       checked={settings.auditLog}
-                      onCheckedChange={(checked) => handleSettingChange('auditLog', checked)}
+                      onCheckedChange={(checked) => updateSetting('auditLog', checked)}
                     />
                   </div>
 
@@ -135,7 +166,7 @@ export const AdminPanel = () => {
                     </div>
                     <Switch
                       checked={settings.smartReminder}
-                      onCheckedChange={(checked) => handleSettingChange('smartReminder', checked)}
+                      onCheckedChange={(checked) => updateSetting('smartReminder', checked)}
                     />
                   </div>
 
@@ -148,7 +179,7 @@ export const AdminPanel = () => {
                     </div>
                     <Switch
                       checked={settings.antifraud}
-                      onCheckedChange={(checked) => handleSettingChange('antifraud', checked)}
+                      onCheckedChange={(checked) => updateSetting('antifraud', checked)}
                     />
                   </div>
                 </div>
@@ -166,23 +197,44 @@ export const AdminPanel = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome Completo</Label>
-                  <Input id="name" placeholder="Nome do funcionário" />
+                  <Label htmlFor="user-name">Nome Completo</Label>
+                  <Input 
+                    id="user-name" 
+                    placeholder="Nome do usuário"
+                    value={newUser.name}
+                    onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="email@exemplo.com" />
+                  <Label htmlFor="user-email">Email</Label>
+                  <Input 
+                    id="user-email" 
+                    type="email" 
+                    placeholder="email@exemplo.com"
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="role">Cargo</Label>
-                  <Input id="role" placeholder="Cargo do funcionário" />
+                  <Label htmlFor="user-role">Tipo de Usuário</Label>
+                  <Select value={newUser.role} onValueChange={(value) => setNewUser({...newUser, role: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="employee">Funcionário</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={handleAddUser} className="bg-red-600 hover:bg-red-700 w-full">
+                    Adicionar Usuário
+                  </Button>
                 </div>
               </div>
-              <Button className="bg-red-600 hover:bg-red-700">
-                Adicionar Funcionário
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -196,19 +248,43 @@ export const AdminPanel = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="company-name">Nome da Empresa</Label>
-                  <Input id="company-name" placeholder="Nome da empresa" />
+                  <Input 
+                    id="company-name" 
+                    placeholder="Nome da empresa"
+                    value={newCompany.name}
+                    onChange={(e) => setNewCompany({...newCompany, name: e.target.value})}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cnpj">CNPJ</Label>
-                  <Input id="cnpj" placeholder="00.000.000/0000-00" />
+                  <Input 
+                    id="cnpj" 
+                    placeholder="00.000.000/0000-00"
+                    value={newCompany.cnpj}
+                    onChange={(e) => setNewCompany({...newCompany, cnpj: e.target.value})}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={handleAddCompany} className="bg-red-600 hover:bg-red-700 w-full">
+                    Adicionar Empresa
+                  </Button>
                 </div>
               </div>
-              <Button className="bg-red-600 hover:bg-red-700">
-                Adicionar Empresa
-              </Button>
+              
+              <div className="space-y-2">
+                <h4 className="font-semibold">Empresas Cadastradas</h4>
+                {companies.map(company => (
+                  <div key={company.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <div>
+                      <span className="font-medium">{company.name}</span>
+                      <span className="text-sm text-gray-500 ml-2">{company.cnpj}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -225,22 +301,42 @@ export const AdminPanel = () => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="start-time">Horário de Entrada</Label>
-                  <Input id="start-time" type="time" defaultValue="08:00" />
+                  <Input 
+                    id="start-time" 
+                    type="time" 
+                    value={settings.workHours.startTime}
+                    onChange={(e) => updateSetting('workHours.startTime', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lunch-start">Início Almoço</Label>
-                  <Input id="lunch-start" type="time" defaultValue="12:00" />
+                  <Input 
+                    id="lunch-start" 
+                    type="time" 
+                    value={settings.workHours.lunchStart}
+                    onChange={(e) => updateSetting('workHours.lunchStart', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lunch-end">Fim Almoço</Label>
-                  <Input id="lunch-end" type="time" defaultValue="13:00" />
+                  <Input 
+                    id="lunch-end" 
+                    type="time" 
+                    value={settings.workHours.lunchEnd}
+                    onChange={(e) => updateSetting('workHours.lunchEnd', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="end-time">Horário de Saída</Label>
-                  <Input id="end-time" type="time" defaultValue="17:00" />
+                  <Input 
+                    id="end-time" 
+                    type="time" 
+                    value={settings.workHours.endTime}
+                    onChange={(e) => updateSetting('workHours.endTime', e.target.value)}
+                  />
                 </div>
               </div>
-              <Button className="bg-red-600 hover:bg-red-700">
+              <Button onClick={handleSaveSchedule} className="bg-red-600 hover:bg-red-700">
                 Salvar Configurações
               </Button>
             </CardContent>
@@ -258,16 +354,24 @@ export const AdminPanel = () => {
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                  <span>João Silva fez login</span>
+                  <span>João Silva registrou entrada</span>
                   <span className="text-gray-500">08:00 - 06/06/2025</span>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                  <span>Maria Santos registrou ponto de entrada</span>
-                  <span className="text-gray-500">08:15 - 06/06/2025</span>
+                  <span>Maria Santos registrou saída para almoço</span>
+                  <span className="text-gray-500">12:05 - 06/06/2025</span>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
                   <span>Admin alterou configurações do sistema</span>
                   <span className="text-gray-500">07:45 - 06/06/2025</span>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                  <span>Pedro Costa registrou retorno do almoço</span>
+                  <span className="text-gray-500">13:00 - 06/06/2025</span>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                  <span>Novo funcionário Ana Lima adicionado</span>
+                  <span className="text-gray-500">07:30 - 06/06/2025</span>
                 </div>
               </div>
             </CardContent>

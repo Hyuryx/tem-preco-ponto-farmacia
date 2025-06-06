@@ -21,6 +21,7 @@ interface User {
 
 const Dashboard = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -35,11 +36,25 @@ const Dashboard = () => {
     try {
       const user = JSON.parse(userData);
       setCurrentUser(user);
+      
+      // Manter a aba ativa após recarregar a página
+      const savedTab = localStorage.getItem('activeTab');
+      if (savedTab) {
+        setActiveTab(savedTab);
+      } else {
+        setActiveTab(user.role === "employee" ? "clock" : "clock");
+      }
     } catch (error) {
       console.error("Erro ao carregar dados do usuário:", error);
       navigate("/");
     }
   }, [navigate]);
+
+  // Salvar aba ativa no localStorage
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    localStorage.setItem('activeTab', value);
+  };
 
   const handlePrint = () => {
     window.print();
@@ -47,6 +62,7 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('activeTab');
     toast({
       title: "Logout realizado",
       description: "Até logo!",
@@ -102,13 +118,13 @@ const Dashboard = () => {
           <div>
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-800">Registro de Ponto</h2>
-              <p className="text-gray-600">Registre sua entrada e saída do trabalho</p>
+              <p className="text-gray-600">Registre sua entrada, pausas e saída do trabalho</p>
             </div>
             <TimeClockCard currentUser={currentUser} />
           </div>
         ) : (
           // Vista do administrador - acesso completo
-          <Tabs defaultValue="clock" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="clock" className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
@@ -155,7 +171,7 @@ const Dashboard = () => {
                     <Clock className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">192h</div>
+                    <div className="text-2xl font-bold">216h</div>
                     <p className="text-xs text-muted-foreground">Esta semana</p>
                   </CardContent>
                 </Card>
@@ -177,7 +193,7 @@ const Dashboard = () => {
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">24h</div>
+                    <div className="text-2xl font-bold">32h</div>
                     <p className="text-xs text-muted-foreground">Este mês</p>
                   </CardContent>
                 </Card>
