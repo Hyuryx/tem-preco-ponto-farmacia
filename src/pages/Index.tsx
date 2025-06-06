@@ -143,10 +143,10 @@ const Index = () => {
               {!isRegisterMode && !isResetMode && (
                 <form onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-gray-600 font-medium">Username</label>
+                    <label className="text-gray-600 font-medium">Email</label>
                     <Input
-                      type="text"
-                      placeholder="@mail.com"
+                      type="email"
+                      placeholder="seu@email.com"
                       value={loginData.username}
                       onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
                       className="bg-gray-100 border-0 text-gray-600 placeholder:text-gray-400 text-base h-12 rounded-md"
@@ -155,10 +155,10 @@ const Index = () => {
                   </div>
                   
                   <div className="space-y-2 relative">
-                    <label className="text-gray-600 font-medium">Password</label>
+                    <label className="text-gray-600 font-medium">Senha</label>
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="password"
+                      placeholder="Sua senha"
                       value={loginData.password}
                       onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                       className="bg-gray-100 border-0 text-gray-600 placeholder:text-gray-400 text-base h-12 rounded-md pr-10"
@@ -184,7 +184,7 @@ const Index = () => {
                         className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                       />
                       <label htmlFor="remember" className="text-sm text-gray-600">
-                        Remember me
+                        Lembrar-me
                       </label>
                     </div>
                     <Button 

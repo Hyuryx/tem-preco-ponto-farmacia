@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Users, BarChart3, MapPin, Settings, LogOut, Calendar, FileText, Printer } from "lucide-react";
 import { TimeClockCard } from "@/components/TimeClockCard";
 import { EmployeeList } from "@/components/EmployeeList";
-import { ReportsSection } from "@/components/ReportsSection";
+import ReportsSection from "@/components/ReportsSection";
 import { AdminPanel } from "@/components/AdminPanel";
 
 const Dashboard = () => {
@@ -144,7 +144,7 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="reports">
-            <ReportsSection currentUser={currentUser} />
+            <ReportsSection />
           </TabsContent>
 
           {currentUser.role === "admin" && (
