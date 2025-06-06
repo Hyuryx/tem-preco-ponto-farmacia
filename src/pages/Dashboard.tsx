@@ -9,6 +9,7 @@ import { TimeClockCard } from "@/components/TimeClockCard";
 import { EmployeeList } from "@/components/EmployeeList";
 import ReportsSection from "@/components/ReportsSection";
 import { AdminPanel } from "@/components/AdminPanel";
+import { VacationManagement } from "@/components/VacationManagement";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
@@ -214,7 +215,7 @@ const Dashboard = () => {
         ) : (
           // Vista do administrador - acesso completo
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="clock" className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 Ponto
@@ -226,6 +227,10 @@ const Dashboard = () => {
               <TabsTrigger value="employees" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 Funcionários
+              </TabsTrigger>
+              <TabsTrigger value="vacation" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Férias
               </TabsTrigger>
               <TabsTrigger value="reports" className="flex items-center gap-2">
                 <FileText className="w-4 h-4" />
@@ -291,6 +296,10 @@ const Dashboard = () => {
 
             <TabsContent value="employees">
               <EmployeeList currentUser={currentUser} />
+            </TabsContent>
+
+            <TabsContent value="vacation">
+              <VacationManagement currentUser={currentUser} />
             </TabsContent>
 
             <TabsContent value="reports">

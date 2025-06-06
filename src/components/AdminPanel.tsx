@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Users, Building, Clock, Shield, Globe, Moon, Sun } from "lucide-react";
+import { Settings, Users, Building, Clock, Shield, Globe, Moon, Sun, Calendar } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { UserManagement } from "@/components/UserManagement";
 import { CompanyManagement } from "@/components/CompanyManagement";
+import { VacationManagement } from "@/components/VacationManagement";
 import { useToast } from "@/hooks/use-toast";
 
 interface AdminPanelProps {
@@ -84,7 +84,7 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="general" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
             Geral
@@ -100,6 +100,10 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
           <TabsTrigger value="schedule" className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
             Horários
+          </TabsTrigger>
+          <TabsTrigger value="vacation" className="flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            Férias
           </TabsTrigger>
         </TabsList>
 
@@ -276,6 +280,10 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="vacation">
+          <VacationManagement currentUser={currentUser} />
         </TabsContent>
       </Tabs>
     </div>
