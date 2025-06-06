@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, Users, BarChart3, MapPin, Camera, Calculator } from "lucide-react";
+import { Clock, Users, BarChart3, MapPin, Calculator, Eye, EyeOff } from "lucide-react";
 
 const Index = () => {
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [registerData, setRegisterData] = useState({ 
     name: "", 
     email: "", 
@@ -18,6 +19,8 @@ const Index = () => {
     role: "employee" 
   });
   const [resetEmail, setResetEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberLogin, setRememberLogin] = useState(false);
   const { toast } = useToast();
 
   const handleLogin = (e: React.FormEvent) => {
@@ -49,6 +52,13 @@ const Index = () => {
     toast({
       title: "Email enviado",
       description: "Instruções de recuperação enviadas para seu email",
+    });
+  };
+
+  const handleSocialLogin = (provider: string) => {
+    toast({
+      title: `Login com ${provider}`,
+      description: `Conectando com ${provider}...`,
     });
   };
 
@@ -92,12 +102,12 @@ const Index = () => {
               <span className="text-sm font-medium text-gray-700">Geolocalização</span>
             </div>
             <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm">
-              <Camera className="w-8 h-8 text-red-500 mb-2" />
-              <span className="text-sm font-medium text-gray-700">Foto Confirmação</span>
-            </div>
-            <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm">
               <Calculator className="w-8 h-8 text-red-500 mb-2" />
               <span className="text-sm font-medium text-gray-700">Cálculo Automático</span>
+            </div>
+            <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm">
+              <BarChart3 className="w-8 h-8 text-red-500 mb-2" />
+              <span className="text-sm font-medium text-gray-700">Relatórios</span>
             </div>
           </div>
 
@@ -111,15 +121,15 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Right side - Login form */}
+        {/* Right side - Login form following the image pattern */}
         <div className="w-full max-w-md mx-auto">
-          <Card className="shadow-2xl border-0">
+          <Card className="shadow-2xl border-0 bg-white">
             <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl font-bold text-gray-800">
-                Acesse sua conta
+              <CardTitle className="text-2xl font-bold text-gray-800 mb-6">
+                Iniciar sessão
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
               <Tabs defaultValue="login" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 mb-6">
                   <TabsTrigger value="login" className="text-sm">Entrar</TabsTrigger>
@@ -130,79 +140,129 @@ const Index = () => {
                 <TabsContent value="login">
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
                       <Input
-                        id="email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={loginData.email}
-                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                        type="text"
+                        placeholder="NOME DE USUÁRIO"
+                        value={loginData.username}
+                        onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
+                        className="bg-gray-100 border-0 text-gray-600 placeholder:text-gray-500 placeholder:uppercase text-sm h-12"
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Senha</Label>
+                    <div className="space-y-2 relative">
                       <Input
-                        id="password"
-                        type="password"
-                        placeholder="Sua senha"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="SENHA"
                         value={loginData.password}
                         onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                        className="bg-gray-100 border-0 text-gray-600 placeholder:text-gray-500 placeholder:uppercase text-sm h-12 pr-10"
                         required
                       />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
                     </div>
-                    <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
+
+                    {/* Social Login Buttons */}
+                    <div className="grid grid-cols-3 gap-2 mt-4">
+                      <Button
+                        type="button"
+                        onClick={() => handleSocialLogin("Facebook")}
+                        className="bg-blue-600 hover:bg-blue-700 text-white h-12"
+                      >
+                        f
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => handleSocialLogin("Google")}
+                        className="bg-white hover:bg-gray-50 text-gray-600 border border-gray-300 h-12"
+                      >
+                        G
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => handleSocialLogin("Apple")}
+                        className="bg-black hover:bg-gray-800 text-white h-12"
+                      >
+                        
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center space-x-2 mt-4">
+                      <Checkbox
+                        id="remember"
+                        checked={rememberLogin}
+                        onCheckedChange={setRememberLogin}
+                        className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                      />
+                      <Label htmlFor="remember" className="text-sm text-gray-600">
+                        Manter login
+                      </Label>
+                    </div>
+
+                    <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 h-12 mt-6">
                       ENTRAR
                     </Button>
+
+                    <div className="text-center mt-4">
+                      <p className="text-sm text-gray-500 uppercase">
+                        Não consegue fazer login?
+                      </p>
+                      <Button variant="link" className="text-sm text-gray-600 uppercase p-0">
+                        Criar conta
+                      </Button>
+                    </div>
                   </form>
                 </TabsContent>
 
                 <TabsContent value="register">
                   <form onSubmit={handleRegister} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Nome Completo</Label>
                       <Input
-                        id="name"
-                        placeholder="Seu nome completo"
+                        placeholder="Nome Completo"
                         value={registerData.name}
                         onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
+                        className="bg-gray-100 border-0 h-12"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="register-email">Email</Label>
                       <Input
-                        id="register-email"
                         type="email"
                         placeholder="seu@email.com"
                         value={registerData.email}
                         onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                        className="bg-gray-100 border-0 h-12"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="register-password">Senha</Label>
                       <Input
-                        id="register-password"
                         type="password"
                         placeholder="Sua senha"
                         value={registerData.password}
                         onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                        className="bg-gray-100 border-0 h-12"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirmar Senha</Label>
                       <Input
-                        id="confirm-password"
                         type="password"
                         placeholder="Confirme sua senha"
                         value={registerData.confirmPassword}
                         onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+                        className="bg-gray-100 border-0 h-12"
                         required
                       />
                     </div>
-                    <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
+                    <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 h-12">
                       CADASTRAR
                     </Button>
                   </form>
@@ -211,17 +271,16 @@ const Index = () => {
                 <TabsContent value="reset">
                   <form onSubmit={handlePasswordReset} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="reset-email">Email</Label>
                       <Input
-                        id="reset-email"
                         type="email"
                         placeholder="seu@email.com"
                         value={resetEmail}
                         onChange={(e) => setResetEmail(e.target.value)}
+                        className="bg-gray-100 border-0 h-12"
                         required
                       />
                     </div>
-                    <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
+                    <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 h-12">
                       ENVIAR INSTRUÇÕES
                     </Button>
                   </form>
