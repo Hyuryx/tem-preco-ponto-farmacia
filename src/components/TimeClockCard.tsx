@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, Wifi, WifiOff, Coffee, LogIn, LogOut, Utensils } from "lucide-react";
+import { Clock, MapPin, Wifi, WifiOff, Coffee, LogIn, LogOut, Utensils, Navigation } from "lucide-react";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 interface TimeClockCardProps {
   currentUser: {
@@ -16,9 +18,9 @@ interface TimeClockCardProps {
 export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   
   const { getTodayEntry, clockIn, lunchOut, lunchIn, clockOut, calculateHours } = useTimeTracking(currentUser);
+  const location = useGeolocation();
   const todayEntry = getTodayEntry();
 
   useEffect(() => {
@@ -31,20 +33,6 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-        }
-      );
-    }
 
     return () => {
       clearInterval(timer);
@@ -133,12 +121,31 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
             {getStatusBadge()}
           </div>
 
-          {location && (
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-              <MapPin className="w-4 h-4" />
-              <span>Localização confirmada</span>
+          {/* Informações de localização */}
+          <div className="border rounded-lg p-3 bg-gray-50">
+            <div className="flex items-center gap-2 mb-2">
+              <Navigation className="w-4 h-4 text-blue-500" />
+              <span className="font-medium text-sm">Localização</span>
             </div>
-          )}
+            
+            {location.loading ? (
+              <div className="text-sm text-gray-600">Obtendo localização...</div>
+            ) : location.error ? (
+              <div className="text-sm text-red-600">{location.error}</div>
+            ) : (
+              <div className="space-y-1">
+                <div className="text-sm text-gray-800 font-medium">
+                  {location.city}, {location.country}
+                </div>
+                <div className="text-xs text-gray-600 line-clamp-2">
+                  {location.address}
+                </div>
+                <div className="text-xs text-gray-500">
+                  Coordenadas: {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <Button 

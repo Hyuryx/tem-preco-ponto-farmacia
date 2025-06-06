@@ -103,6 +103,25 @@ export const useTimeTracking = (currentUser: any) => {
 
   const today = new Date().toISOString().split('T')[0];
 
+  // Carregar dados persistidos do localStorage na inicialização
+  useEffect(() => {
+    const savedTimeEntries = localStorage.getItem('timeEntries');
+    if (savedTimeEntries) {
+      try {
+        setTimeEntries(JSON.parse(savedTimeEntries));
+      } catch (error) {
+        console.error('Erro ao carregar dados do ponto:', error);
+      }
+    }
+  }, []);
+
+  // Salvar no localStorage sempre que timeEntries mudar
+  useEffect(() => {
+    if (timeEntries.length > 0) {
+      localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+    }
+  }, [timeEntries]);
+
   // Carregar saldo acumulado do usuário
   const getAccumulatedBalance = (userId: string): number => {
     const saved = localStorage.getItem(`balance_${userId}`);
@@ -223,6 +242,16 @@ export const useTimeTracking = (currentUser: any) => {
     const timeString = now.toTimeString().slice(0, 5);
     const entry = getTodayEntry();
     
+    // Verificar se já não está trabalhando
+    if (entry.status === 'clocked-in' || entry.status === 'lunch-break' || entry.status === 'lunch-return') {
+      toast({
+        title: "Aviso",
+        description: "Você já está com o ponto ativo.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Sempre criar uma nova entrada ou resetar se já finalizado
     if (entry.status === 'clocked-out' || !entry.clockIn) {
       const newEntry = {
@@ -234,13 +263,6 @@ export const useTimeTracking = (currentUser: any) => {
         status: 'clocked-in' as const
       };
       updateTimeEntry(newEntry);
-    } else {
-      toast({
-        title: "Erro",
-        description: "Você já registrou a entrada hoje.",
-        variant: "destructive"
-      });
-      return;
     }
 
     toast({
@@ -330,6 +352,15 @@ export const useTimeTracking = (currentUser: any) => {
       toast({
         title: "Erro",
         description: "Você precisa registrar a entrada primeiro.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (entry.lunchOut && !entry.lunchIn) {
+      toast({
+        title: "Erro",
+        description: "Você precisa registrar o retorno do almoço antes de bater a saída.",
         variant: "destructive"
       });
       return;
