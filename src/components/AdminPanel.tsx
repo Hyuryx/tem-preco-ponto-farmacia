@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,11 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Users, Building, Clock, Shield, Globe, Moon, Sun, Calendar } from "lucide-react";
+import { Settings, Users, Building, Clock, Shield, Globe, Moon, Sun, Info } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { UserManagement } from "@/components/UserManagement";
 import { CompanyManagement } from "@/components/CompanyManagement";
-import { VacationManagement } from "@/components/VacationManagement";
 import { useToast } from "@/hooks/use-toast";
 
 interface AdminPanelProps {
@@ -84,7 +84,7 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="general" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
             Geral
@@ -100,10 +100,6 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
           <TabsTrigger value="schedule" className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
             Horários
-          </TabsTrigger>
-          <TabsTrigger value="vacation" className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Férias
           </TabsTrigger>
         </TabsList>
 
@@ -208,6 +204,16 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Info className="w-4 h-4 text-blue-600" />
+                  <span className="font-medium text-sm text-blue-800">Informações Importantes</span>
+                </div>
+                <div className="text-sm text-blue-700">
+                  <p>Essas configurações afetam o cálculo de horas trabalhadas, extras e saldos de todos os funcionários.</p>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="daily-hours">Horas Diárias Obrigatórias</Label>
@@ -280,10 +286,6 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
               </Button>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="vacation">
-          <VacationManagement currentUser={currentUser} />
         </TabsContent>
       </Tabs>
     </div>
