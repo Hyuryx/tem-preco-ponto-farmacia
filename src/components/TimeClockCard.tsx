@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, Wifi, WifiOff, Coffee, LogIn, LogOut, Utensils, Navigation } from "lucide-react";
+import { Clock, MapPin, Wifi, WifiOff, Coffee, LogIn, LogOut, Utensils, Navigation, Info } from "lucide-react";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { useGeolocation } from "@/hooks/useGeolocation";
 
@@ -188,6 +189,19 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
           <CardTitle>Resumo do Dia</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Informações sobre jornada de trabalho */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Info className="w-4 h-4 text-blue-600" />
+              <span className="font-medium text-sm text-blue-800">Jornada de Trabalho</span>
+            </div>
+            <div className="text-sm text-blue-700">
+              <div>• Horas obrigatórias: <span className="font-semibold">9h</span></div>
+              <div>• Intervalo para almoço: <span className="font-semibold">1h</span></div>
+              <div>• Total do dia: <span className="font-semibold">10h</span></div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <div className="text-2xl font-bold text-gray-800">
