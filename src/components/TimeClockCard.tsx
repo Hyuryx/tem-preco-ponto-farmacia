@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -90,6 +91,9 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
 
   // Função para obter as configurações do botão único baseado no status
   const getButtonConfig = () => {
+    console.log('Current status:', todayEntry.status);
+    console.log('Today entry:', todayEntry);
+    
     switch (todayEntry.status) {
       case 'not-started':
         return {
@@ -102,7 +106,7 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
       case 'clocked-in':
         return {
           onClick: lunchOut,
-          disabled: !todayEntry.clockIn || !!todayEntry.lunchOut,
+          disabled: false,
           icon: Utensils,
           label: "ALMOÇO",
           color: "bg-yellow-600 hover:bg-yellow-700"
@@ -110,7 +114,7 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
       case 'lunch-break':
         return {
           onClick: lunchIn,
-          disabled: !todayEntry.lunchOut || !!todayEntry.lunchIn,
+          disabled: false,
           icon: Coffee,
           label: "RETORNO",
           color: "bg-blue-600 hover:bg-blue-700"
@@ -118,7 +122,7 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
       case 'lunch-return':
         return {
           onClick: () => setShowExitConfirmation(true),
-          disabled: !todayEntry.clockIn || (todayEntry.lunchOut && !todayEntry.lunchIn),
+          disabled: false,
           icon: LogOut,
           label: "SAÍDA",
           color: "bg-red-600 hover:bg-red-700"
