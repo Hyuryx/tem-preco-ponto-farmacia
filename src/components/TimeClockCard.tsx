@@ -70,15 +70,27 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
   };
 
   const formatHours = (hours: number) => {
-    const h = Math.floor(hours);
-    const m = Math.floor((hours - h) * 60);
-    return `${h}h ${m}m`;
+    const h = Math.floor(Math.abs(hours));
+    const m = Math.floor((Math.abs(hours) - h) * 60);
+    const sign = hours < 0 ? '-' : '';
+    return `${sign}${h}h ${m}m`;
   };
 
   const getHoursBalance = () => {
     const { totalHours } = calculateHours(todayEntry);
-    const balance = totalHours - 9; // 9 horas obrigatórias
-    return balance;
+    const dailyBalance = totalHours - 9; // 9 horas obrigatórias
+    const totalBalance = todayEntry.accumulatedBalance + dailyBalance;
+    return totalBalance;
+  };
+
+  const getBalanceColor = () => {
+    const balance = getHoursBalance();
+    return balance >= 0 ? 'text-green-600' : 'text-red-600';
+  };
+
+  const getBalanceLabel = () => {
+    const balance = getHoursBalance();
+    return balance >= 0 ? 'Horas Extras' : 'Horas Negativas';
   };
 
   return (
@@ -132,7 +144,7 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
           <div className="grid grid-cols-2 gap-3">
             <Button 
               onClick={clockIn}
-              disabled={!!todayEntry.clockIn}
+              disabled={!!todayEntry.clockIn && todayEntry.status !== 'clocked-out'}
               className="bg-green-600 hover:bg-green-700 h-12 flex items-center gap-2"
             >
               <LogIn className="w-4 h-4" />
@@ -141,7 +153,7 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
             
             <Button 
               onClick={lunchOut}
-              disabled={!todayEntry.clockIn || !!todayEntry.lunchOut}
+              disabled={!todayEntry.clockIn || !!todayEntry.lunchOut || todayEntry.status === 'clocked-out'}
               className="bg-yellow-600 hover:bg-yellow-700 h-12 flex items-center gap-2"
             >
               <Utensils className="w-4 h-4" />
@@ -150,7 +162,7 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
             
             <Button 
               onClick={lunchIn}
-              disabled={!todayEntry.lunchOut || !!todayEntry.lunchIn}
+              disabled={!todayEntry.lunchOut || !!todayEntry.lunchIn || todayEntry.status === 'clocked-out'}
               className="bg-blue-600 hover:bg-blue-700 h-12 flex items-center gap-2"
             >
               <Coffee className="w-4 h-4" />
@@ -182,11 +194,11 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
               <div className="text-sm text-gray-600">Horas Trabalhadas</div>
             </div>
             <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <div className={`text-2xl font-bold ${getHoursBalance() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {getHoursBalance() >= 0 ? '+' : ''}{formatHours(Math.abs(getHoursBalance()))}
+              <div className={`text-2xl font-bold ${getBalanceColor()}`}>
+                {getHoursBalance() >= 0 ? '+' : ''}{formatHours(getHoursBalance())}
               </div>
               <div className="text-sm text-gray-600">
-                {getHoursBalance() >= 0 ? 'Horas Extras' : 'Horas Negativas'}
+                {getBalanceLabel()}
               </div>
             </div>
           </div>
@@ -217,6 +229,18 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
                 <span className={`font-medium ${todayEntry.clockOut ? '' : 'text-gray-400'}`}>
                   {todayEntry.clockOut || '--:--'}
                 </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-4">
+            <div className="text-center">
+              <div className="text-lg font-semibold text-gray-800">Saldo Acumulado</div>
+              <div className={`text-xl font-bold ${getBalanceColor()} mt-1`}>
+                {todayEntry.accumulatedBalance >= 0 ? '+' : ''}{formatHours(todayEntry.accumulatedBalance)}
+              </div>
+              <div className="text-sm text-gray-500 mt-1">
+                {todayEntry.accumulatedBalance >= 0 ? 'Crédito acumulado' : 'Débito a pagar'}
               </div>
             </div>
           </div>

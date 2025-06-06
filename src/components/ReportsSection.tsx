@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, Download, Filter, FileText, BarChart3, Clock, Users, TrendingUp, AlertTriangle, CheckCircle, XCircle, Calendar as CalendarIcon, MapPin, DollarSign, FileBarChart, UserCheck, Briefcase, Activity, Target, Award, Settings, Eye, FileSpreadsheet, PieChart, LineChart } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Calendar, Download, Filter, FileText, BarChart3, Clock, Users, TrendingUp, AlertTriangle, CheckCircle, Calendar as CalendarIcon, FileBarChart, UserCheck, Briefcase, Activity, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTimeTracking } from "@/hooks/useTimeTracking";
 
 const ReportsSection = () => {
   const [selectedReport, setSelectedReport] = useState("");
@@ -16,6 +17,7 @@ const ReportsSection = () => {
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [currentPreview, setCurrentPreview] = useState<any>(null);
   const { toast } = useToast();
+  const { employees, timeEntries } = useTimeTracking({ name: 'admin', role: 'admin', company: 'TEM PREÇO' });
 
   const reports = [
     { id: "timesheet", name: "Espelho de Ponto", icon: Clock, description: "Registro detalhado de marcações" },
@@ -33,48 +35,95 @@ const ReportsSection = () => {
   ];
 
   const generateMockData = (reportType: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    
     switch (reportType) {
       case "timesheet":
         return {
           title: "Espelho de Ponto",
-          data: [
-            { funcionario: "João Silva", entrada: "08:00", almoco_saida: "12:00", almoco_volta: "13:00", saida: "17:30", total: "8h 30m" },
-            { funcionario: "Maria Santos", entrada: "08:15", almoco_saida: "12:05", almoco_volta: "13:05", saida: "17:45", total: "8h 20m" },
-            { funcionario: "Pedro Costa", entrada: "07:45", almoco_saida: "12:00", almoco_volta: "13:00", saida: "17:15", total: "8h 30m" }
-          ]
+          headers: ["Funcionário", "Entrada", "Almoço Saída", "Almoço Volta", "Saída", "Total Horas"],
+          data: employees.map(emp => {
+            const entry = timeEntries.find(e => e.userId === emp.name && e.date === today);
+            return [
+              emp.name,
+              entry?.clockIn || "--:--",
+              entry?.lunchOut || "--:--", 
+              entry?.lunchIn || "--:--",
+              entry?.clockOut || "--:--",
+              entry ? `${Math.floor(entry.totalHours)}h ${Math.floor((entry.totalHours % 1) * 60)}m` : "0h 0m"
+            ];
+          })
         };
       case "overtime":
         return {
           title: "Relatório de Horas Extras",
-          data: [
-            { funcionario: "João Silva", horas_extras: "2h 30m", valor: "R$ 75,00" },
-            { funcionario: "Maria Santos", horas_extras: "1h 45m", valor: "R$ 52,50" },
-            { funcionario: "Pedro Costa", horas_extras: "3h 15m", valor: "R$ 97,50" }
-          ]
+          headers: ["Funcionário", "Horas Extras", "Valor Estimado"],
+          data: employees.map(emp => {
+            const entry = timeEntries.find(e => e.userId === emp.name && e.date === today);
+            const overtimeHours = entry?.overtimeHours || 0;
+            return [
+              emp.name,
+              `${Math.floor(overtimeHours)}h ${Math.floor((overtimeHours % 1) * 60)}m`,
+              `R$ ${(overtimeHours * 25).toFixed(2)}`
+            ];
+          })
+        };
+      case "daily":
+        return {
+          title: "Relatório Diário",
+          headers: ["Funcionário", "Status", "Horas Trabalhadas", "Último Registro"],
+          data: employees.map(emp => {
+            const entry = timeEntries.find(e => e.userId === emp.name && e.date === today);
+            let status = "Ausente";
+            if (entry) {
+              switch (entry.status) {
+                case 'clocked-in': status = "Trabalhando"; break;
+                case 'lunch-break': status = "Almoço"; break;
+                case 'lunch-return': status = "Retornou"; break;
+                case 'clocked-out': status = "Finalizado"; break;
+              }
+            }
+            return [
+              emp.name,
+              status,
+              entry ? `${Math.floor(entry.totalHours)}h ${Math.floor((entry.totalHours % 1) * 60)}m` : "0h 0m",
+              entry?.clockOut || entry?.lunchIn || entry?.lunchOut || entry?.clockIn || "--:--"
+            ];
+          })
         };
       default:
         return {
           title: `Relatório ${reportType}`,
+          headers: ["Item", "Valor"],
           data: [
-            { item: "Dados de exemplo", valor: "100%" },
-            { item: "Informações demonstrativas", valor: "95%" }
+            ["Dados de exemplo", "100%"],
+            ["Informações demonstrativas", "95%"]
           ]
         };
     }
   };
 
+  const generateCSV = (reportData: any) => {
+    const headers = reportData.headers.join(",");
+    const rows = reportData.data.map((row: any[]) => 
+      row.map(cell => `"${cell}"`).join(",")
+    ).join("\n");
+    
+    return `${headers}\n${rows}`;
+  };
+
   const generateReport = (reportId: string) => {
     const reportData = generateMockData(reportId);
+    const csvContent = generateCSV(reportData);
     
-    // Simular geração de Excel
-    const csvContent = "data:text/csv;charset=utf-8," + 
-      Object.keys(reportData.data[0]).join(",") + "\n" +
-      reportData.data.map(row => Object.values(row).join(",")).join("\n");
-    
-    const encodedUri = encodeURI(csvContent);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `${reportData.title}.csv`);
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${reportData.title.replace(/\s+/g, '_')}.csv`);
+    link.style.visibility = 'hidden';
+    
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -156,10 +205,9 @@ const ReportsSection = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="emp1">João Silva</SelectItem>
-                <SelectItem value="emp2">Maria Santos</SelectItem>
-                <SelectItem value="emp3">Pedro Costa</SelectItem>
-                <SelectItem value="emp4">Ana Lima</SelectItem>
+                {employees.map(emp => (
+                  <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -210,6 +258,9 @@ const ReportsSection = () => {
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{currentPreview?.title}</DialogTitle>
+            <DialogDescription>
+              Prévia do relatório antes de gerar o arquivo
+            </DialogDescription>
           </DialogHeader>
           {currentPreview && (
             <div className="space-y-4">
@@ -217,19 +268,19 @@ const ReportsSection = () => {
                 <table className="w-full border-collapse border border-gray-300">
                   <thead>
                     <tr className="bg-gray-50">
-                      {Object.keys(currentPreview.data[0]).map(key => (
-                        <th key={key} className="border border-gray-300 p-2 text-left">
-                          {key.replace(/_/g, ' ').toUpperCase()}
+                      {currentPreview.headers.map((header: string, index: number) => (
+                        <th key={index} className="border border-gray-300 p-2 text-left font-semibold">
+                          {header}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {currentPreview.data.map((row: any, index: number) => (
-                      <tr key={index}>
-                        {Object.values(row).map((value: any, cellIndex) => (
+                    {currentPreview.data.map((row: any[], rowIndex: number) => (
+                      <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        {row.map((cell: any, cellIndex: number) => (
                           <td key={cellIndex} className="border border-gray-300 p-2">
-                            {value}
+                            {cell}
                           </td>
                         ))}
                       </tr>
@@ -240,7 +291,7 @@ const ReportsSection = () => {
               <div className="flex gap-2">
                 <Button onClick={() => generateReport(selectedReport)} className="bg-red-600 hover:bg-red-700">
                   <Download className="w-4 h-4 mr-2" />
-                  Baixar Excel
+                  Baixar CSV
                 </Button>
                 <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
                   Fechar

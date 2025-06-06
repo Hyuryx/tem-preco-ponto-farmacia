@@ -12,6 +12,7 @@ export interface TimeEntry {
   clockOut?: string;
   totalHours: number;
   overtimeHours: number;
+  accumulatedBalance: number;
   status: 'clocked-in' | 'lunch-break' | 'lunch-return' | 'clocked-out' | 'not-started';
 }
 
@@ -74,6 +75,17 @@ export const useTimeTracking = (currentUser: any) => {
 
   const today = new Date().toISOString().split('T')[0];
 
+  // Carregar saldo acumulado do usuário
+  const getAccumulatedBalance = (userId: string): number => {
+    const saved = localStorage.getItem(`balance_${userId}`);
+    return saved ? parseFloat(saved) : 0;
+  };
+
+  // Salvar saldo acumulado do usuário
+  const saveAccumulatedBalance = (userId: string, balance: number) => {
+    localStorage.setItem(`balance_${userId}`, balance.toString());
+  };
+
   const getTodayEntry = (): TimeEntry => {
     const existing = timeEntries.find(entry => 
       entry.userId === currentUser.name && entry.date === today
@@ -81,18 +93,25 @@ export const useTimeTracking = (currentUser: any) => {
     
     if (existing) return existing;
     
+    const accumulatedBalance = getAccumulatedBalance(currentUser.name);
+    
     return {
       id: `${currentUser.name}-${today}`,
       userId: currentUser.name,
       date: today,
       totalHours: 0,
       overtimeHours: 0,
+      accumulatedBalance,
       status: 'not-started'
     };
   };
 
-  const calculateHours = (entry: TimeEntry): { totalHours: number; overtimeHours: number } => {
-    if (!entry.clockIn) return { totalHours: 0, overtimeHours: 0 };
+  const calculateHours = (entry: TimeEntry): { totalHours: number; overtimeHours: number; accumulatedBalance: number } => {
+    if (!entry.clockIn) return { 
+      totalHours: 0, 
+      overtimeHours: 0, 
+      accumulatedBalance: entry.accumulatedBalance 
+    };
 
     const clockInTime = new Date(`${entry.date}T${entry.clockIn}`);
     let clockOutTime: Date;
@@ -120,15 +139,33 @@ export const useTimeTracking = (currentUser: any) => {
     }
 
     const totalHours = Math.max(0, totalMinutes / 60);
-    const overtimeHours = Math.max(0, totalHours - 9); // 9 horas obrigatórias
+    
+    // Calcular saldo do dia
+    const dailyBalance = totalHours - 9; // 9 horas obrigatórias
+    
+    // Se o dia foi finalizado, atualizar saldo acumulado
+    let newAccumulatedBalance = entry.accumulatedBalance;
+    if (entry.clockOut && entry.status === 'clocked-out') {
+      newAccumulatedBalance = entry.accumulatedBalance + dailyBalance;
+      saveAccumulatedBalance(entry.userId, newAccumulatedBalance);
+    }
+    
+    // Determinar horas extras baseado no saldo total
+    const effectiveBalance = entry.clockOut ? newAccumulatedBalance : entry.accumulatedBalance + dailyBalance;
+    const overtimeHours = Math.max(0, effectiveBalance);
 
-    return { totalHours, overtimeHours };
+    return { 
+      totalHours, 
+      overtimeHours, 
+      accumulatedBalance: entry.clockOut ? newAccumulatedBalance : entry.accumulatedBalance 
+    };
   };
 
   const updateTimeEntry = (updatedEntry: TimeEntry) => {
     const calculated = calculateHours(updatedEntry);
     updatedEntry.totalHours = calculated.totalHours;
     updatedEntry.overtimeHours = calculated.overtimeHours;
+    updatedEntry.accumulatedBalance = calculated.accumulatedBalance;
 
     setTimeEntries(prev => {
       const filtered = prev.filter(entry => entry.id !== updatedEntry.id);
@@ -136,27 +173,53 @@ export const useTimeTracking = (currentUser: any) => {
     });
   };
 
+  const resetDailyEntry = () => {
+    const entry = getTodayEntry();
+    const resetEntry = {
+      ...entry,
+      clockIn: undefined,
+      lunchOut: undefined,
+      lunchIn: undefined,
+      clockOut: undefined,
+      totalHours: 0,
+      overtimeHours: 0,
+      status: 'not-started' as const
+    };
+    
+    setTimeEntries(prev => prev.filter(e => e.id !== entry.id));
+  };
+
   const clockIn = () => {
     const now = new Date();
     const timeString = now.toTimeString().slice(0, 5);
     const entry = getTodayEntry();
     
-    if (entry.clockIn) {
+    // Se já finalizou o dia, permitir novo ciclo
+    if (entry.status === 'clocked-out') {
+      resetDailyEntry();
+      const newEntry = getTodayEntry();
+      const updatedEntry = {
+        ...newEntry,
+        clockIn: timeString,
+        status: 'clocked-in' as const
+      };
+      updateTimeEntry(updatedEntry);
+    } else if (entry.clockIn) {
       toast({
         title: "Erro",
         description: "Você já registrou a entrada hoje.",
         variant: "destructive"
       });
       return;
+    } else {
+      const updatedEntry = {
+        ...entry,
+        clockIn: timeString,
+        status: 'clocked-in' as const
+      };
+      updateTimeEntry(updatedEntry);
     }
 
-    const updatedEntry = {
-      ...entry,
-      clockIn: timeString,
-      status: 'clocked-in' as const
-    };
-
-    updateTimeEntry(updatedEntry);
     toast({
       title: "Ponto registrado",
       description: `Entrada registrada às ${timeString}`,
@@ -283,6 +346,16 @@ export const useTimeTracking = (currentUser: any) => {
     });
   };
 
+  const updateEmployee = (updatedEmployee: Employee) => {
+    setEmployees(prev => 
+      prev.map(emp => emp.id === updatedEmployee.id ? updatedEmployee : emp)
+    );
+    toast({
+      title: "Funcionário atualizado",
+      description: `${updatedEmployee.name} foi atualizado com sucesso.`,
+    });
+  };
+
   return {
     timeEntries,
     employees,
@@ -292,6 +365,7 @@ export const useTimeTracking = (currentUser: any) => {
     lunchIn,
     clockOut,
     addEmployee,
+    updateEmployee,
     calculateHours
   };
 };

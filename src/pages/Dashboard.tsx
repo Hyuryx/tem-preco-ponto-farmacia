@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Clock, Users, BarChart3, MapPin, Settings, LogOut, Calendar, FileText, Printer } from "lucide-react";
 import { TimeClockCard } from "@/components/TimeClockCard";
 import { EmployeeList } from "@/components/EmployeeList";
@@ -10,6 +11,7 @@ import ReportsSection from "@/components/ReportsSection";
 import { AdminPanel } from "@/components/AdminPanel";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useTimeTracking } from "@/hooks/useTimeTracking";
 
 interface User {
   id: number;
@@ -22,8 +24,11 @@ interface User {
 const Dashboard = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<string>("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogContent, setDialogContent] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { employees, timeEntries } = useTimeTracking({ name: 'admin', role: 'admin', company: 'TEM PREÇO' });
 
   useEffect(() => {
     // Verificar se o usuário está logado
@@ -68,6 +73,90 @@ const Dashboard = () => {
       description: "Até logo!",
     });
     navigate("/");
+  };
+
+  // Funções para os cards clicáveis
+  const getActiveEmployees = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return timeEntries.filter(entry => 
+      entry.date === today && 
+      (entry.status === 'clocked-in' || entry.status === 'lunch-break' || entry.status === 'lunch-return')
+    ).length;
+  };
+
+  const getTotalHoursWorked = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayEntries = timeEntries.filter(entry => entry.date === today);
+    const totalHours = todayEntries.reduce((sum, entry) => sum + entry.totalHours, 0);
+    return Math.floor(totalHours);
+  };
+
+  const getPresentToday = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return timeEntries.filter(entry => 
+      entry.date === today && entry.clockIn
+    ).length;
+  };
+
+  const getOvertimeHours = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayEntries = timeEntries.filter(entry => entry.date === today);
+    const totalOvertime = todayEntries.reduce((sum, entry) => sum + entry.overtimeHours, 0);
+    return Math.floor(totalOvertime);
+  };
+
+  const handleCardClick = (cardType: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    switch (cardType) {
+      case 'employees':
+        setDialogContent({
+          title: 'Funcionários Ativos',
+          data: employees.filter(emp => {
+            const entry = timeEntries.find(e => e.userId === emp.name && e.date === today);
+            return entry && (entry.status === 'clocked-in' || entry.status === 'lunch-break' || entry.status === 'lunch-return');
+          }).map(emp => ({
+            name: emp.name,
+            role: emp.role,
+            status: timeEntries.find(e => e.userId === emp.name && e.date === today)?.status || 'Ausente'
+          }))
+        });
+        break;
+      case 'hours':
+        setDialogContent({
+          title: 'Horas Trabalhadas Hoje',
+          data: timeEntries.filter(entry => entry.date === today && entry.totalHours > 0)
+            .map(entry => ({
+              employee: entry.userId,
+              hours: `${Math.floor(entry.totalHours)}h ${Math.floor((entry.totalHours % 1) * 60)}m`,
+              status: entry.status
+            }))
+        });
+        break;
+      case 'present':
+        setDialogContent({
+          title: 'Presentes Hoje',
+          data: timeEntries.filter(entry => entry.date === today && entry.clockIn)
+            .map(entry => ({
+              employee: entry.userId,
+              clockIn: entry.clockIn,
+              status: entry.status
+            }))
+        });
+        break;
+      case 'overtime':
+        setDialogContent({
+          title: 'Horas Extras',
+          data: timeEntries.filter(entry => entry.date === today && entry.overtimeHours > 0)
+            .map(entry => ({
+              employee: entry.userId,
+              overtime: `${Math.floor(entry.overtimeHours)}h ${Math.floor((entry.overtimeHours % 1) * 60)}m`,
+              balance: entry.accumulatedBalance >= 0 ? 'Positivo' : 'Negativo'
+            }))
+        });
+        break;
+    }
+    setDialogOpen(true);
   };
 
   if (!currentUser) {
@@ -154,47 +243,47 @@ const Dashboard = () => {
 
             <TabsContent value="dashboard">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <Card>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleCardClick('employees')}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Funcionários Ativos</CardTitle>
                     <Users className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">24</div>
-                    <p className="text-xs text-muted-foreground">+2 desde ontem</p>
+                    <div className="text-2xl font-bold">{getActiveEmployees()}</div>
+                    <p className="text-xs text-muted-foreground">Trabalhando agora</p>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleCardClick('hours')}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Horas Trabalhadas</CardTitle>
                     <Clock className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">216h</div>
-                    <p className="text-xs text-muted-foreground">Esta semana</p>
+                    <div className="text-2xl font-bold">{getTotalHoursWorked()}h</div>
+                    <p className="text-xs text-muted-foreground">Hoje</p>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleCardClick('present')}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Presentes Hoje</CardTitle>
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">18</div>
-                    <p className="text-xs text-muted-foreground">75% da equipe</p>
+                    <div className="text-2xl font-bold">{getPresentToday()}</div>
+                    <p className="text-xs text-muted-foreground">{Math.round((getPresentToday() / employees.length) * 100)}% da equipe</p>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleCardClick('overtime')}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Horas Extras</CardTitle>
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">32h</div>
-                    <p className="text-xs text-muted-foreground">Este mês</p>
+                    <div className="text-2xl font-bold">{getOvertimeHours()}h</div>
+                    <p className="text-xs text-muted-foreground">Hoje</p>
                   </CardContent>
                 </Card>
               </div>
@@ -214,6 +303,43 @@ const Dashboard = () => {
           </Tabs>
         )}
       </div>
+
+      {/* Dialog para mostrar detalhes dos cards */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{dialogContent?.title}</DialogTitle>
+          </DialogHeader>
+          {dialogContent && (
+            <div className="space-y-4">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      {dialogContent.data[0] && Object.keys(dialogContent.data[0]).map((key: string) => (
+                        <th key={key} className="border border-gray-300 p-2 text-left font-semibold">
+                          {key.charAt(0).toUpperCase() + key.slice(1)}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dialogContent.data.map((row: any, index: number) => (
+                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        {Object.values(row).map((value: any, cellIndex: number) => (
+                          <td key={cellIndex} className="border border-gray-300 p-2">
+                            {value}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

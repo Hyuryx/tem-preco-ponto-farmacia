@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Search, UserPlus, Edit, Eye } from "lucide-react";
-import { useTimeTracking } from "@/hooks/useTimeTracking";
+import { useTimeTracking, Employee } from "@/hooks/useTimeTracking";
 
 interface EmployeeListProps {
   currentUser: {
@@ -33,6 +33,10 @@ const pharmacyRoles = [
 export const EmployeeList = ({ currentUser }: EmployeeListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     email: '',
@@ -43,7 +47,7 @@ export const EmployeeList = ({ currentUser }: EmployeeListProps) => {
     isAdmin: false
   });
 
-  const { employees, addEmployee } = useTimeTracking(currentUser);
+  const { employees, addEmployee, updateEmployee, timeEntries } = useTimeTracking(currentUser);
 
   const filteredEmployees = employees.filter(employee =>
     employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -51,22 +55,58 @@ export const EmployeeList = ({ currentUser }: EmployeeListProps) => {
     employee.department.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusBadge = (employee: any) => {
-    const statuses = ['Presente', 'Ausente', 'Almoço', 'Férias'];
-    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+  const getEmployeeStatus = (employee: Employee) => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayEntry = timeEntries.find(entry => 
+      entry.userId === employee.name && entry.date === today
+    );
     
-    switch (randomStatus) {
+    if (!todayEntry) return 'Ausente';
+    return todayEntry.status === 'clocked-out' ? 'Finalizado' : 
+           todayEntry.status === 'lunch-break' ? 'Almoço' : 'Presente';
+  };
+
+  const getStatusBadge = (employee: Employee) => {
+    const status = getEmployeeStatus(employee);
+    
+    switch (status) {
       case "Presente":
         return <Badge className="bg-green-100 text-green-800">Presente</Badge>;
       case "Ausente":
         return <Badge className="bg-red-100 text-red-800">Ausente</Badge>;
       case "Almoço":
         return <Badge className="bg-yellow-100 text-yellow-800">Almoço</Badge>;
-      case "Férias":
-        return <Badge className="bg-blue-100 text-blue-800">Férias</Badge>;
+      case "Finalizado":
+        return <Badge className="bg-blue-100 text-blue-800">Finalizado</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800">{randomStatus}</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
     }
+  };
+
+  const getEmployeeHours = (employee: Employee) => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayEntry = timeEntries.find(entry => 
+      entry.userId === employee.name && entry.date === today
+    );
+    
+    if (!todayEntry) return "0h 0m";
+    return `${Math.floor(todayEntry.totalHours)}h ${Math.floor((todayEntry.totalHours % 1) * 60)}m`;
+  };
+
+  const getLastPointTime = (employee: Employee) => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayEntry = timeEntries.find(entry => 
+      entry.userId === employee.name && entry.date === today
+    );
+    
+    if (!todayEntry) return "--:--";
+    
+    if (todayEntry.clockOut) return todayEntry.clockOut;
+    if (todayEntry.lunchIn) return todayEntry.lunchIn;
+    if (todayEntry.lunchOut) return todayEntry.lunchOut;
+    if (todayEntry.clockIn) return todayEntry.clockIn;
+    
+    return "--:--";
   };
 
   const handleAddEmployee = () => {
@@ -94,6 +134,24 @@ export const EmployeeList = ({ currentUser }: EmployeeListProps) => {
       isAdmin: false
     });
     setIsAddDialogOpen(false);
+  };
+
+  const handleViewEmployee = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditEmployee = (employee: Employee) => {
+    setEditingEmployee({...employee});
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingEmployee && updateEmployee) {
+      updateEmployee(editingEmployee);
+      setIsEditDialogOpen(false);
+      setEditingEmployee(null);
+    }
   };
 
   return (
@@ -217,15 +275,15 @@ export const EmployeeList = ({ currentUser }: EmployeeListProps) => {
                   <TableCell>{employee.role}</TableCell>
                   <TableCell>{employee.department}</TableCell>
                   <TableCell>{getStatusBadge(employee)}</TableCell>
-                  <TableCell>{Math.floor(Math.random() * 8) + 1}h {Math.floor(Math.random() * 59)}m</TableCell>
-                  <TableCell>{String(Math.floor(Math.random() * 12) + 7).padStart(2, '0')}:{String(Math.floor(Math.random() * 59)).padStart(2, '0')}</TableCell>
+                  <TableCell>{getEmployeeHours(employee)}</TableCell>
+                  <TableCell>{getLastPointTime(employee)}</TableCell>
                   {currentUser.role === "admin" && (
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleViewEmployee(employee)}>
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleEditEmployee(employee)}>
                           <Edit className="w-4 h-4" />
                         </Button>
                       </div>
@@ -236,6 +294,128 @@ export const EmployeeList = ({ currentUser }: EmployeeListProps) => {
             </TableBody>
           </Table>
         </div>
+
+        {/* Dialog para visualizar funcionário */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Detalhes do Funcionário</DialogTitle>
+            </DialogHeader>
+            {selectedEmployee && (
+              <div className="space-y-4">
+                <div>
+                  <Label>Nome</Label>
+                  <p className="text-sm text-gray-600">{selectedEmployee.name}</p>
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <p className="text-sm text-gray-600">{selectedEmployee.email}</p>
+                </div>
+                <div>
+                  <Label>Cargo</Label>
+                  <p className="text-sm text-gray-600">{selectedEmployee.role}</p>
+                </div>
+                <div>
+                  <Label>Departamento</Label>
+                  <p className="text-sm text-gray-600">{selectedEmployee.department}</p>
+                </div>
+                <div>
+                  <Label>Idade</Label>
+                  <p className="text-sm text-gray-600">{selectedEmployee.age} anos</p>
+                </div>
+                <div>
+                  <Label>Sexo</Label>
+                  <p className="text-sm text-gray-600">{selectedEmployee.gender}</p>
+                </div>
+                <div>
+                  <Label>Tipo de Acesso</Label>
+                  <p className="text-sm text-gray-600">{selectedEmployee.isAdmin ? 'Administrador' : 'Funcionário'}</p>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para editar funcionário */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Editar Funcionário</DialogTitle>
+            </DialogHeader>
+            {editingEmployee && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-name">Nome Completo</Label>
+                  <Input
+                    id="edit-name"
+                    value={editingEmployee.name}
+                    onChange={(e) => setEditingEmployee({...editingEmployee, name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={editingEmployee.email}
+                    onChange={(e) => setEditingEmployee({...editingEmployee, email: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-role">Cargo</Label>
+                  <Select value={editingEmployee.role} onValueChange={(value) => setEditingEmployee({...editingEmployee, role: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pharmacyRoles.map(role => (
+                        <SelectItem key={role} value={role}>{role}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-age">Idade</Label>
+                  <Input
+                    id="edit-age"
+                    type="number"
+                    value={editingEmployee.age.toString()}
+                    onChange={(e) => setEditingEmployee({...editingEmployee, age: parseInt(e.target.value) || 0})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-gender">Sexo</Label>
+                  <Select value={editingEmployee.gender} onValueChange={(value: 'Masculino' | 'Feminino') => setEditingEmployee({...editingEmployee, gender: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Masculino">Masculino</SelectItem>
+                      <SelectItem value="Feminino">Feminino</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="edit-isAdmin"
+                    checked={editingEmployee.isAdmin}
+                    onChange={(e) => setEditingEmployee({...editingEmployee, isAdmin: e.target.checked})}
+                  />
+                  <Label htmlFor="edit-isAdmin">Acesso de Administrador</Label>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleSaveEdit} className="flex-1 bg-red-600 hover:bg-red-700">
+                    Salvar
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="flex-1">
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
