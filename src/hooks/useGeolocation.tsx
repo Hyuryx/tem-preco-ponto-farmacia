@@ -35,17 +35,32 @@ export const useGeolocation = () => {
       
       const data = await response.json();
       
-      const address = data.display_name || 'Endereço não encontrado';
-      const city = data.address?.city || data.address?.town || data.address?.village || 'Cidade não encontrada';
-      const country = data.address?.country || 'País não encontrado';
+      // Simplificar as informações - mostrar apenas rua, bairro e estado
+      const road = data.address?.road || '';
+      const houseNumber = data.address?.house_number || '';
+      const suburb = data.address?.suburb || data.address?.neighbourhood || '';
+      const state = data.address?.state || '';
+      
+      // Construir endereço simplificado
+      let simplifiedAddress = '';
+      if (road) {
+        simplifiedAddress = road;
+        if (houseNumber) {
+          simplifiedAddress += `, ${houseNumber}`;
+        }
+      }
+      
+      const address = simplifiedAddress || 'Endereço não encontrado';
+      const city = suburb || 'Bairro não encontrado';
+      const country = state || 'Estado não encontrado';
       
       return { address, city, country };
     } catch (error) {
       console.error('Erro na geocodificação reversa:', error);
       return {
         address: 'Endereço não disponível',
-        city: 'Cidade não disponível',
-        country: 'País não disponível'
+        city: 'Bairro não disponível',
+        country: 'Estado não disponível'
       };
     }
   };

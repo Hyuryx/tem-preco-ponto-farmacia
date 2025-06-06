@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export interface Settings {
   automaticSync: boolean;
@@ -64,6 +64,37 @@ export const useSettings = () => {
     phone: ''
   });
 
+  // Carregar configurações do localStorage ao inicializar
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('appSettings');
+    const savedWorkHours = localStorage.getItem('workHours');
+    const savedCompanySettings = localStorage.getItem('companySettings');
+
+    if (savedSettings) {
+      try {
+        setSettings(JSON.parse(savedSettings));
+      } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
+      }
+    }
+
+    if (savedWorkHours) {
+      try {
+        setWorkHours(JSON.parse(savedWorkHours));
+      } catch (error) {
+        console.error('Erro ao carregar horários:', error);
+      }
+    }
+
+    if (savedCompanySettings) {
+      try {
+        setCompanySettings(JSON.parse(savedCompanySettings));
+      } catch (error) {
+        console.error('Erro ao carregar dados da empresa:', error);
+      }
+    }
+  }, []);
+
   const updateSetting = (key: keyof Settings | string, value: any) => {
     if (key === 'darkMode') {
       document.documentElement.classList.toggle('dark', value);
@@ -71,15 +102,19 @@ export const useSettings = () => {
     
     if (key.includes('.')) {
       const [parent, child] = key.split('.');
-      setSettings(prev => ({
-        ...prev,
+      const newSettings = {
+        ...settings,
         [parent]: {
-          ...(prev[parent as keyof Settings] as any),
+          ...(settings[parent as keyof Settings] as any),
           [child]: value
         }
-      }));
+      };
+      setSettings(newSettings);
+      localStorage.setItem('appSettings', JSON.stringify(newSettings));
     } else {
-      setSettings(prev => ({ ...prev, [key]: value }));
+      const newSettings = { ...settings, [key]: value };
+      setSettings(newSettings);
+      localStorage.setItem('appSettings', JSON.stringify(newSettings));
     }
   };
 
@@ -90,10 +125,14 @@ export const useSettings = () => {
 
   const updateWorkHours = (newWorkHours: WorkHours) => {
     setWorkHours(newWorkHours);
+    localStorage.setItem('workHours', JSON.stringify(newWorkHours));
+    console.log('Configurações de horário salvas:', newWorkHours);
   };
 
   const updateCompanySettings = (newCompanySettings: CompanySettings) => {
     setCompanySettings(newCompanySettings);
+    localStorage.setItem('companySettings', JSON.stringify(newCompanySettings));
+    console.log('Configurações da empresa salvas:', newCompanySettings);
   };
 
   return { 

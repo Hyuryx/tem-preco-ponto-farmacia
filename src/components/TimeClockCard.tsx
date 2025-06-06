@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -135,13 +134,10 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
             ) : (
               <div className="space-y-1">
                 <div className="text-sm text-gray-800 font-medium">
-                  {location.city}, {location.country}
-                </div>
-                <div className="text-xs text-gray-600 line-clamp-2">
                   {location.address}
                 </div>
-                <div className="text-xs text-gray-500">
-                  Coordenadas: {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+                <div className="text-xs text-gray-600">
+                  {location.city}, {location.country}
                 </div>
               </div>
             )}
