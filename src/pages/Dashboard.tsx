@@ -14,13 +14,14 @@ interface User {
 
 const Dashboard = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Verificar se o usuário está logado
     const userData = localStorage.getItem('currentUser');
     if (!userData) {
-      navigate("/");
+      navigate("/", { replace: true });
       return;
     }
 
@@ -29,12 +30,26 @@ const Dashboard = () => {
       setCurrentUser(user);
     } catch (error) {
       console.error("Erro ao carregar dados do usuário:", error);
-      navigate("/");
+      localStorage.removeItem('currentUser');
+      navigate("/", { replace: true });
+    } finally {
+      setLoading(false);
     }
   }, [navigate]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentUser) {
-    return <div>Carregando...</div>;
+    return null;
   }
 
   // Renderizar dashboard baseado no tipo de usuário
