@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Users, Building, Clock, Shield, Globe, Moon, Sun } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { UserManagement } from "@/components/UserManagement";
+import { CompanyManagement } from "@/components/CompanyManagement";
 
 interface AdminPanelProps {
   currentUser?: {
@@ -24,20 +24,13 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
     darkMode, 
     toggleDarkMode, 
     workHours, 
-    updateWorkHours, 
-    companySettings, 
-    updateCompanySettings 
+    updateWorkHours
   } = useSettings();
 
   const [localWorkHours, setLocalWorkHours] = useState(workHours);
-  const [localCompanySettings, setLocalCompanySettings] = useState(companySettings);
 
   const handleSaveWorkHours = () => {
     updateWorkHours(localWorkHours);
-  };
-
-  const handleSaveCompanySettings = () => {
-    updateCompanySettings(localCompanySettings);
   };
 
   return (
@@ -156,61 +149,7 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
         </TabsContent>
 
         <TabsContent value="company">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="w-5 h-5" />
-                Gestão Multi-empresa
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="company-name">Nome da Empresa</Label>
-                  <Input
-                    id="company-name"
-                    value={localCompanySettings.name}
-                    onChange={(e) => setLocalCompanySettings({...localCompanySettings, name: e.target.value})}
-                    placeholder="Nome da empresa"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="company-cnpj">CNPJ</Label>
-                  <Input
-                    id="company-cnpj"
-                    value={localCompanySettings.cnpj}
-                    onChange={(e) => setLocalCompanySettings({...localCompanySettings, cnpj: e.target.value})}
-                    placeholder="00.000.000/0000-00"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="company-address">Endereço</Label>
-                  <Input
-                    id="company-address"
-                    value={localCompanySettings.address}
-                    onChange={(e) => setLocalCompanySettings({...localCompanySettings, address: e.target.value})}
-                    placeholder="Endereço da empresa"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="company-phone">Telefone</Label>
-                  <Input
-                    id="company-phone"
-                    value={localCompanySettings.phone}
-                    onChange={(e) => setLocalCompanySettings({...localCompanySettings, phone: e.target.value})}
-                    placeholder="(11) 99999-9999"
-                  />
-                </div>
-              </div>
-              
-              <Button onClick={handleSaveCompanySettings} className="bg-red-600 hover:bg-red-700">
-                Salvar Configurações da Empresa
-              </Button>
-            </CardContent>
-          </Card>
+          <CompanyManagement currentUser={currentUser} />
         </TabsContent>
 
         <TabsContent value="schedule">

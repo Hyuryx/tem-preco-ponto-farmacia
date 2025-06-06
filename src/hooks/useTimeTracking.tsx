@@ -34,6 +34,17 @@ export interface SystemUser {
   userType: 'admin' | 'employee';
   employeeId?: string;
   createdAt: string;
+  createdBy: string;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  cnpj: string;
+  address: string;
+  phone: string;
+  createdAt: string;
+  createdBy: string;
 }
 
 export const useTimeTracking = (currentUser: any) => {
@@ -45,7 +56,8 @@ export const useTimeTracking = (currentUser: any) => {
       email: 'admin@tempreco.com',
       password: 'admin123',
       userType: 'admin',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      createdBy: 'Sistema'
     },
     {
       id: '2',
@@ -54,7 +66,19 @@ export const useTimeTracking = (currentUser: any) => {
       password: 'func123',
       userType: 'employee',
       employeeId: '1',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      createdBy: 'Sistema'
+    }
+  ]);
+  const [companies, setCompanies] = useState<Company[]>([
+    {
+      id: '1',
+      name: 'TEM PREÇO',
+      cnpj: '12.345.678/0001-90',
+      address: 'Rua Principal, 123 - Centro',
+      phone: '(11) 99999-9999',
+      createdAt: new Date().toISOString(),
+      createdBy: 'Sistema'
     }
   ]);
   const [employees, setEmployees] = useState<Employee[]>([
@@ -106,6 +130,9 @@ export const useTimeTracking = (currentUser: any) => {
   // Carregar dados persistidos do localStorage na inicialização
   useEffect(() => {
     const savedTimeEntries = localStorage.getItem('timeEntries');
+    const savedSystemUsers = localStorage.getItem('systemUsers');
+    const savedCompanies = localStorage.getItem('companies');
+    
     if (savedTimeEntries) {
       try {
         setTimeEntries(JSON.parse(savedTimeEntries));
@@ -113,14 +140,42 @@ export const useTimeTracking = (currentUser: any) => {
         console.error('Erro ao carregar dados do ponto:', error);
       }
     }
+
+    if (savedSystemUsers) {
+      try {
+        setSystemUsers(JSON.parse(savedSystemUsers));
+      } catch (error) {
+        console.error('Erro ao carregar usuários do sistema:', error);
+      }
+    }
+
+    if (savedCompanies) {
+      try {
+        setCompanies(JSON.parse(savedCompanies));
+      } catch (error) {
+        console.error('Erro ao carregar empresas:', error);
+      }
+    }
   }, []);
 
-  // Salvar no localStorage sempre que timeEntries mudar
+  // Salvar no localStorage sempre que os dados mudarem
   useEffect(() => {
     if (timeEntries.length > 0) {
       localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
     }
   }, [timeEntries]);
+
+  useEffect(() => {
+    if (systemUsers.length > 0) {
+      localStorage.setItem('systemUsers', JSON.stringify(systemUsers));
+    }
+  }, [systemUsers]);
+
+  useEffect(() => {
+    if (companies.length > 0) {
+      localStorage.setItem('companies', JSON.stringify(companies));
+    }
+  }, [companies]);
 
   // Carregar saldo acumulado do usuário
   const getAccumulatedBalance = (userId: string): number => {
@@ -401,11 +456,12 @@ export const useTimeTracking = (currentUser: any) => {
     });
   };
 
-  const addSystemUser = (user: Omit<SystemUser, 'id' | 'createdAt'>) => {
+  const addSystemUser = (user: Omit<SystemUser, 'id' | 'createdAt' | 'createdBy'>) => {
     const newUser = {
       ...user,
       id: Date.now().toString(),
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      createdBy: currentUser?.name || 'Desconhecido'
     };
     setSystemUsers(prev => [...prev, newUser]);
     toast({
@@ -433,10 +489,44 @@ export const useTimeTracking = (currentUser: any) => {
     });
   };
 
+  const addCompany = (company: Omit<Company, 'id' | 'createdAt' | 'createdBy'>) => {
+    const newCompany = {
+      ...company,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      createdBy: currentUser?.name || 'Desconhecido'
+    };
+    setCompanies(prev => [...prev, newCompany]);
+    toast({
+      title: "Empresa adicionada",
+      description: `${company.name} foi adicionada com sucesso.`,
+    });
+    return newCompany;
+  };
+
+  const updateCompany = (updatedCompany: Company) => {
+    setCompanies(prev => 
+      prev.map(company => company.id === updatedCompany.id ? updatedCompany : company)
+    );
+    toast({
+      title: "Empresa atualizada",
+      description: `${updatedCompany.name} foi atualizada com sucesso.`,
+    });
+  };
+
+  const deleteCompany = (companyId: string) => {
+    setCompanies(prev => prev.filter(company => company.id !== companyId));
+    toast({
+      title: "Empresa removida",
+      description: "Empresa foi removida com sucesso.",
+    });
+  };
+
   return {
     timeEntries,
     employees,
     systemUsers,
+    companies,
     getTodayEntry,
     clockIn,
     lunchOut,
@@ -447,6 +537,9 @@ export const useTimeTracking = (currentUser: any) => {
     addSystemUser,
     updateSystemUser,
     deleteSystemUser,
+    addCompany,
+    updateCompany,
+    deleteCompany,
     calculateHours
   };
 };

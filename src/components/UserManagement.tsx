@@ -21,6 +21,8 @@ interface UserManagementProps {
 
 export const UserManagement = ({ currentUser }: UserManagementProps) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
@@ -52,6 +54,21 @@ export const UserManagement = ({ currentUser }: UserManagementProps) => {
       employeeId: ''
     });
     setIsAddDialogOpen(false);
+  };
+
+  const handleEditUser = () => {
+    if (!editingUser.name || !editingUser.email) {
+      return;
+    }
+
+    updateSystemUser(editingUser);
+    setIsEditDialogOpen(false);
+    setEditingUser(null);
+  };
+
+  const openEditDialog = (user: any) => {
+    setEditingUser({ ...user });
+    setIsEditDialogOpen(true);
   };
 
   const getUserTypeBadge = (userType: 'admin' | 'employee') => {
@@ -160,6 +177,7 @@ export const UserManagement = ({ currentUser }: UserManagementProps) => {
                 <TableHead>Email</TableHead>
                 <TableHead>Tipo de Usuário</TableHead>
                 <TableHead>Funcionário Vinculado</TableHead>
+                <TableHead>Criado por</TableHead>
                 <TableHead>Data de Criação</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
@@ -171,12 +189,13 @@ export const UserManagement = ({ currentUser }: UserManagementProps) => {
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{getUserTypeBadge(user.userType)}</TableCell>
                   <TableCell>{getEmployeeName(user.employeeId)}</TableCell>
+                  <TableCell>{user.createdBy}</TableCell>
                   <TableCell>
                     {new Date(user.createdAt).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => openEditDialog(user)}>
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button 
@@ -194,6 +213,70 @@ export const UserManagement = ({ currentUser }: UserManagementProps) => {
             </TableBody>
           </Table>
         </div>
+
+        {/* Dialog de Edição */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Editar Usuário</DialogTitle>
+            </DialogHeader>
+            {editingUser && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-user-name">Nome Completo</Label>
+                  <Input
+                    id="edit-user-name"
+                    value={editingUser.name}
+                    onChange={(e) => setEditingUser({...editingUser, name: e.target.value})}
+                    placeholder="Nome do usuário"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-user-email">Email</Label>
+                  <Input
+                    id="edit-user-email"
+                    type="email"
+                    value={editingUser.email}
+                    onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
+                    placeholder="email@exemplo.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-user-type">Tipo de Usuário</Label>
+                  <Select value={editingUser.userType} onValueChange={(value: 'admin' | 'employee') => setEditingUser({...editingUser, userType: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="employee">Funcionário</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {editingUser.userType === 'employee' && (
+                  <div>
+                    <Label htmlFor="edit-employee-id">Vincular ao Funcionário</Label>
+                    <Select value={editingUser.employeeId || ''} onValueChange={(value) => setEditingUser({...editingUser, employeeId: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um funcionário" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees.map(employee => (
+                          <SelectItem key={employee.id} value={employee.id}>
+                            {employee.name} - {employee.role}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <Button onClick={handleEditUser} className="w-full bg-red-600 hover:bg-red-700">
+                  Salvar Alterações
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
