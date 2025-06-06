@@ -299,27 +299,14 @@ export const useTimeTracking = (currentUser: any) => {
     const timeString = now.toTimeString().slice(0, 5);
     const entry = getTodayEntry();
     
-    // Se já finalizou o dia, permitir nova entrada no mesmo dia
-    if (entry.status === 'clocked-out') {
-      // Criar nova entrada mantendo o saldo acumulado atual
-      const newEntryId = `${currentUser.name}-${today}-${Date.now()}`;
-      const newEntry = {
+    // Se é primeira entrada do dia ou quer iniciar novo expediente
+    if (entry.status === 'not-started' || entry.status === 'clocked-out') {
+      const updatedEntry = {
         ...entry,
-        id: newEntryId,
         clockIn: timeString,
         lunchOut: undefined,
         lunchIn: undefined,
         clockOut: undefined,
-        totalHours: 0,
-        overtimeHours: 0,
-        status: 'clocked-in' as const
-      };
-      updateTimeEntry(newEntry);
-    } else if (entry.status === 'not-started') {
-      // Primeira entrada do dia
-      const updatedEntry = {
-        ...entry,
-        clockIn: timeString,
         status: 'clocked-in' as const
       };
       updateTimeEntry(updatedEntry);
