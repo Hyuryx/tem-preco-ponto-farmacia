@@ -2,12 +2,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Clock, Users, BarChart3, MapPin, Calculator, Eye, EyeOff } from "lucide-react";
+import { CheckedState } from "@radix-ui/react-checkbox";
 
 const Index = () => {
   const [loginData, setLoginData] = useState({ username: "", password: "" });
@@ -21,6 +20,8 @@ const Index = () => {
   const [resetEmail, setResetEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberLogin, setRememberLogin] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [isResetMode, setIsResetMode] = useState(false);
   const { toast } = useToast();
 
   const handleLogin = (e: React.FormEvent) => {
@@ -55,11 +56,8 @@ const Index = () => {
     });
   };
 
-  const handleSocialLogin = (provider: string) => {
-    toast({
-      title: `Login com ${provider}`,
-      description: `Conectando com ${provider}...`,
-    });
+  const handleRememberChange = (checked: CheckedState) => {
+    setRememberLogin(checked === true);
   };
 
   return (
@@ -125,167 +123,180 @@ const Index = () => {
         <div className="w-full max-w-md mx-auto">
           <Card className="shadow-2xl border-0 bg-white">
             <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl font-bold text-gray-800 mb-6">
-                Iniciar sessão
-              </CardTitle>
+              {!isRegisterMode && !isResetMode && (
+                <CardTitle className="text-4xl font-bold text-gray-700 mb-6">
+                  LOGIN
+                </CardTitle>
+              )}
+              {isRegisterMode && (
+                <CardTitle className="text-3xl font-bold text-gray-700 mb-6">
+                  CADASTRO
+                </CardTitle>
+              )}
+              {isResetMode && (
+                <CardTitle className="text-3xl font-bold text-gray-700 mb-6">
+                  RECUPERAR SENHA
+                </CardTitle>
+              )}
             </CardHeader>
-            <CardContent className="space-y-6">
-              <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-6">
-                  <TabsTrigger value="login" className="text-sm">Entrar</TabsTrigger>
-                  <TabsTrigger value="register" className="text-sm">Cadastrar</TabsTrigger>
-                  <TabsTrigger value="reset" className="text-sm">Recuperar</TabsTrigger>
-                </TabsList>
+            <CardContent className="space-y-6 px-8 pb-8">
+              {!isRegisterMode && !isResetMode && (
+                <form onSubmit={handleLogin} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-gray-600 font-medium">Username</label>
+                    <Input
+                      type="text"
+                      placeholder="@mail.com"
+                      value={loginData.username}
+                      onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
+                      className="bg-gray-100 border-0 text-gray-600 placeholder:text-gray-400 text-base h-12 rounded-md"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 relative">
+                    <label className="text-gray-600 font-medium">Password</label>
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="password"
+                      value={loginData.password}
+                      onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                      className="bg-gray-100 border-0 text-gray-600 placeholder:text-gray-400 text-base h-12 rounded-md pr-10"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-2 top-8 h-8 w-8 p-0"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
 
-                <TabsContent value="login">
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Input
-                        type="text"
-                        placeholder="NOME DE USUÁRIO"
-                        value={loginData.username}
-                        onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
-                        className="bg-gray-100 border-0 text-gray-600 placeholder:text-gray-500 placeholder:uppercase text-sm h-12"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2 relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="SENHA"
-                        value={loginData.password}
-                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                        className="bg-gray-100 border-0 text-gray-600 placeholder:text-gray-500 placeholder:uppercase text-sm h-12 pr-10"
-                        required
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-
-                    {/* Social Login Buttons */}
-                    <div className="grid grid-cols-3 gap-2 mt-4">
-                      <Button
-                        type="button"
-                        onClick={() => handleSocialLogin("Facebook")}
-                        className="bg-blue-600 hover:bg-blue-700 text-white h-12"
-                      >
-                        f
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => handleSocialLogin("Google")}
-                        className="bg-white hover:bg-gray-50 text-gray-600 border border-gray-300 h-12"
-                      >
-                        G
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => handleSocialLogin("Apple")}
-                        className="bg-black hover:bg-gray-800 text-white h-12"
-                      >
-                        
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center space-x-2 mt-4">
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="flex items-center space-x-2">
                       <Checkbox
                         id="remember"
                         checked={rememberLogin}
-                        onCheckedChange={setRememberLogin}
+                        onCheckedChange={handleRememberChange}
                         className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                       />
-                      <Label htmlFor="remember" className="text-sm text-gray-600">
-                        Manter login
-                      </Label>
+                      <label htmlFor="remember" className="text-sm text-gray-600">
+                        Remember me
+                      </label>
                     </div>
-
-                    <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 h-12 mt-6">
-                      ENTRAR
+                    <Button 
+                      variant="link" 
+                      className="text-sm text-blue-400 p-0 h-auto font-normal"
+                      onClick={() => setIsResetMode(true)}
+                    >
+                      Esqueceu a Senha?
                     </Button>
+                  </div>
 
-                    <div className="text-center mt-4">
-                      <p className="text-sm text-gray-500 uppercase">
-                        Não consegue fazer login?
-                      </p>
-                      <Button variant="link" className="text-sm text-gray-600 uppercase p-0">
-                        Criar conta
+                  <Button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white h-12 mt-6 rounded-md text-lg font-medium">
+                    Entrar
+                  </Button>
+
+                  <div className="text-center mt-6">
+                    <p className="text-gray-600 mb-2">
+                      Não Tem Uma Conta?{" "}
+                      <Button 
+                        variant="link" 
+                        className="text-blue-400 p-0 h-auto font-normal"
+                        onClick={() => setIsRegisterMode(true)}
+                      >
+                        Inscrever-se
                       </Button>
-                    </div>
-                  </form>
-                </TabsContent>
+                    </p>
+                  </div>
+                </form>
+              )}
 
-                <TabsContent value="register">
-                  <form onSubmit={handleRegister} className="space-y-4">
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Nome Completo"
-                        value={registerData.name}
-                        onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                        className="bg-gray-100 border-0 h-12"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Input
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={registerData.email}
-                        onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                        className="bg-gray-100 border-0 h-12"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Input
-                        type="password"
-                        placeholder="Sua senha"
-                        value={registerData.password}
-                        onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                        className="bg-gray-100 border-0 h-12"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Input
-                        type="password"
-                        placeholder="Confirme sua senha"
-                        value={registerData.confirmPassword}
-                        onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
-                        className="bg-gray-100 border-0 h-12"
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 h-12">
-                      CADASTRAR
+              {isRegisterMode && (
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Nome Completo"
+                      value={registerData.name}
+                      onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
+                      className="bg-gray-100 border-0 h-12"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={registerData.email}
+                      onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                      className="bg-gray-100 border-0 h-12"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      type="password"
+                      placeholder="Sua senha"
+                      value={registerData.password}
+                      onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                      className="bg-gray-100 border-0 h-12"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      type="password"
+                      placeholder="Confirme sua senha"
+                      value={registerData.confirmPassword}
+                      onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+                      className="bg-gray-100 border-0 h-12"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 h-12">
+                    CADASTRAR
+                  </Button>
+                  <div className="text-center">
+                    <Button 
+                      variant="link" 
+                      className="text-sm text-blue-400"
+                      onClick={() => setIsRegisterMode(false)}
+                    >
+                      Voltar ao Login
                     </Button>
-                  </form>
-                </TabsContent>
+                  </div>
+                </form>
+              )}
 
-                <TabsContent value="reset">
-                  <form onSubmit={handlePasswordReset} className="space-y-4">
-                    <div className="space-y-2">
-                      <Input
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={resetEmail}
-                        onChange={(e) => setResetEmail(e.target.value)}
-                        className="bg-gray-100 border-0 h-12"
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 h-12">
-                      ENVIAR INSTRUÇÕES
+              {isResetMode && (
+                <form onSubmit={handlePasswordReset} className="space-y-4">
+                  <div className="space-y-2">
+                    <Input
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="bg-gray-100 border-0 h-12"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 h-12">
+                    ENVIAR INSTRUÇÕES
+                  </Button>
+                  <div className="text-center">
+                    <Button 
+                      variant="link" 
+                      className="text-sm text-blue-400"
+                      onClick={() => setIsResetMode(false)}
+                    >
+                      Voltar ao Login
                     </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
+                  </div>
+                </form>
+              )}
             </CardContent>
           </Card>
 
