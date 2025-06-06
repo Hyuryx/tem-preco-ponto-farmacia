@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,8 +26,37 @@ export interface Employee {
   isAdmin: boolean;
 }
 
+export interface SystemUser {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  userType: 'admin' | 'employee';
+  employeeId?: string;
+  createdAt: string;
+}
+
 export const useTimeTracking = (currentUser: any) => {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [systemUsers, setSystemUsers] = useState<SystemUser[]>([
+    {
+      id: '1',
+      name: 'Admin Sistema',
+      email: 'admin@tempreco.com',
+      password: 'admin123',
+      userType: 'admin',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '2',
+      name: 'Funcionário Sistema',
+      email: 'funcionario@tempreco.com',
+      password: 'func123',
+      userType: 'employee',
+      employeeId: '1',
+      createdAt: new Date().toISOString()
+    }
+  ]);
   const [employees, setEmployees] = useState<Employee[]>([
     {
       id: '1',
@@ -140,8 +168,8 @@ export const useTimeTracking = (currentUser: any) => {
 
     const totalHours = Math.max(0, totalMinutes / 60);
     
-    // Calcular saldo do dia
-    const dailyBalance = totalHours - 9; // 9 horas obrigatórias
+    // Calcular saldo do dia (9 horas obrigatórias)
+    const dailyBalance = totalHours - 9;
     
     // Se o dia foi finalizado, atualizar saldo acumulado
     let newAccumulatedBalance = entry.accumulatedBalance;
@@ -150,9 +178,10 @@ export const useTimeTracking = (currentUser: any) => {
       saveAccumulatedBalance(entry.userId, newAccumulatedBalance);
     }
     
-    // Determinar horas extras baseado no saldo total
-    const effectiveBalance = entry.clockOut ? newAccumulatedBalance : entry.accumulatedBalance + dailyBalance;
-    const overtimeHours = Math.max(0, effectiveBalance);
+    // Para cálculo em tempo real durante o trabalho
+    const currentBalance = entry.clockOut ? newAccumulatedBalance : entry.accumulatedBalance + dailyBalance;
+    
+    const overtimeHours = Math.max(0, currentBalance);
 
     return { 
       totalHours, 
@@ -194,30 +223,24 @@ export const useTimeTracking = (currentUser: any) => {
     const timeString = now.toTimeString().slice(0, 5);
     const entry = getTodayEntry();
     
-    // Se já finalizou o dia, permitir novo ciclo
-    if (entry.status === 'clocked-out') {
-      resetDailyEntry();
-      const newEntry = getTodayEntry();
-      const updatedEntry = {
-        ...newEntry,
+    // Sempre criar uma nova entrada ou resetar se já finalizado
+    if (entry.status === 'clocked-out' || !entry.clockIn) {
+      const newEntry = {
+        ...entry,
         clockIn: timeString,
+        lunchOut: undefined,
+        lunchIn: undefined,
+        clockOut: undefined,
         status: 'clocked-in' as const
       };
-      updateTimeEntry(updatedEntry);
-    } else if (entry.clockIn) {
+      updateTimeEntry(newEntry);
+    } else {
       toast({
         title: "Erro",
         description: "Você já registrou a entrada hoje.",
         variant: "destructive"
       });
       return;
-    } else {
-      const updatedEntry = {
-        ...entry,
-        clockIn: timeString,
-        status: 'clocked-in' as const
-      };
-      updateTimeEntry(updatedEntry);
     }
 
     toast({
@@ -312,15 +335,6 @@ export const useTimeTracking = (currentUser: any) => {
       return;
     }
 
-    if (entry.clockOut) {
-      toast({
-        title: "Erro",
-        description: "Você já registrou a saída hoje.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     const updatedEntry = {
       ...entry,
       clockOut: timeString,
@@ -356,9 +370,42 @@ export const useTimeTracking = (currentUser: any) => {
     });
   };
 
+  const addSystemUser = (user: Omit<SystemUser, 'id' | 'createdAt'>) => {
+    const newUser = {
+      ...user,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString()
+    };
+    setSystemUsers(prev => [...prev, newUser]);
+    toast({
+      title: "Usuário criado",
+      description: `Usuário ${user.name} foi criado com sucesso.`,
+    });
+    return newUser;
+  };
+
+  const updateSystemUser = (updatedUser: SystemUser) => {
+    setSystemUsers(prev => 
+      prev.map(user => user.id === updatedUser.id ? updatedUser : user)
+    );
+    toast({
+      title: "Usuário atualizado",
+      description: `${updatedUser.name} foi atualizado com sucesso.`,
+    });
+  };
+
+  const deleteSystemUser = (userId: string) => {
+    setSystemUsers(prev => prev.filter(user => user.id !== userId));
+    toast({
+      title: "Usuário removido",
+      description: "Usuário foi removido com sucesso.",
+    });
+  };
+
   return {
     timeEntries,
     employees,
+    systemUsers,
     getTodayEntry,
     clockIn,
     lunchOut,
@@ -366,6 +413,9 @@ export const useTimeTracking = (currentUser: any) => {
     clockOut,
     addEmployee,
     updateEmployee,
+    addSystemUser,
+    updateSystemUser,
+    deleteSystemUser,
     calculateHours
   };
 };

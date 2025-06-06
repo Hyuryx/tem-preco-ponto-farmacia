@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -144,7 +143,7 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
           <div className="grid grid-cols-2 gap-3">
             <Button 
               onClick={clockIn}
-              disabled={!!todayEntry.clockIn && todayEntry.status !== 'clocked-out'}
+              disabled={todayEntry.status === 'clocked-in' || todayEntry.status === 'lunch-break' || todayEntry.status === 'lunch-return'}
               className="bg-green-600 hover:bg-green-700 h-12 flex items-center gap-2"
             >
               <LogIn className="w-4 h-4" />
@@ -153,7 +152,7 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
             
             <Button 
               onClick={lunchOut}
-              disabled={!todayEntry.clockIn || !!todayEntry.lunchOut || todayEntry.status === 'clocked-out'}
+              disabled={!todayEntry.clockIn || todayEntry.status === 'lunch-break' || todayEntry.status === 'clocked-out' || !!todayEntry.lunchOut}
               className="bg-yellow-600 hover:bg-yellow-700 h-12 flex items-center gap-2"
             >
               <Utensils className="w-4 h-4" />
@@ -162,7 +161,7 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
             
             <Button 
               onClick={lunchIn}
-              disabled={!todayEntry.lunchOut || !!todayEntry.lunchIn || todayEntry.status === 'clocked-out'}
+              disabled={!todayEntry.lunchOut || todayEntry.status !== 'lunch-break' || !!todayEntry.lunchIn}
               className="bg-blue-600 hover:bg-blue-700 h-12 flex items-center gap-2"
             >
               <Coffee className="w-4 h-4" />
@@ -171,7 +170,7 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
             
             <Button 
               onClick={clockOut}
-              disabled={!todayEntry.clockIn || !!todayEntry.clockOut}
+              disabled={!todayEntry.clockIn || (todayEntry.lunchOut && !todayEntry.lunchIn)}
               className="bg-red-600 hover:bg-red-700 h-12 flex items-center gap-2"
             >
               <LogOut className="w-4 h-4" />
@@ -208,25 +207,25 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span>Entrada:</span>
-                <span className={`font-medium ${todayEntry.clockIn ? '' : 'text-gray-400'}`}>
+                <span className={`font-medium ${todayEntry.clockIn ? 'text-green-600' : 'text-gray-400'}`}>
                   {todayEntry.clockIn || '--:--'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Almoço (Saída):</span>
-                <span className={`font-medium ${todayEntry.lunchOut ? '' : 'text-gray-400'}`}>
+                <span className={`font-medium ${todayEntry.lunchOut ? 'text-yellow-600' : 'text-gray-400'}`}>
                   {todayEntry.lunchOut || '--:--'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Almoço (Volta):</span>
-                <span className={`font-medium ${todayEntry.lunchIn ? '' : 'text-gray-400'}`}>
+                <span className={`font-medium ${todayEntry.lunchIn ? 'text-blue-600' : 'text-gray-400'}`}>
                   {todayEntry.lunchIn || '--:--'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Saída:</span>
-                <span className={`font-medium ${todayEntry.clockOut ? '' : 'text-gray-400'}`}>
+                <span className={`font-medium ${todayEntry.clockOut ? 'text-red-600' : 'text-gray-400'}`}>
                   {todayEntry.clockOut || '--:--'}
                 </span>
               </div>

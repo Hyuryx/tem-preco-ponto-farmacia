@@ -1,379 +1,297 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Settings, Users, Building, Clock, Shield, Database } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Settings, Users, Building, Clock, Shield, Globe, Moon, Sun } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
-import { useToast } from "@/hooks/use-toast";
+import { UserManagement } from "@/components/UserManagement";
 
-export const AdminPanel = () => {
-  const { settings, updateSetting } = useSettings();
-  const { toast } = useToast();
-  const [companies, setCompanies] = useState([
-    { id: '1', name: 'TEM PREÇO - Matriz', cnpj: '12.345.678/0001-90' },
-    { id: '2', name: 'TEM PREÇO - Filial Norte', cnpj: '12.345.678/0002-71' }
-  ]);
-  const [newCompany, setNewCompany] = useState({ name: '', cnpj: '' });
-  const [newUser, setNewUser] = useState({ name: '', email: '', role: 'employee' });
+interface AdminPanelProps {
+  currentUser?: {
+    name: string;
+    role: string;
+    company: string;
+  };
+}
 
-  const handleAddCompany = () => {
-    if (!newCompany.name || !newCompany.cnpj) return;
-    
-    const company = {
-      id: Date.now().toString(),
-      name: newCompany.name,
-      cnpj: newCompany.cnpj
-    };
-    
-    setCompanies(prev => [...prev, company]);
-    setNewCompany({ name: '', cnpj: '' });
-    toast({
-      title: "Empresa adicionada",
-      description: `${company.name} foi adicionada com sucesso.`,
-    });
+export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", company: "TEM PREÇO" } }: AdminPanelProps) => {
+  const { 
+    darkMode, 
+    toggleDarkMode, 
+    workHours, 
+    updateWorkHours, 
+    companySettings, 
+    updateCompanySettings 
+  } = useSettings();
+
+  const [localWorkHours, setLocalWorkHours] = useState(workHours);
+  const [localCompanySettings, setLocalCompanySettings] = useState(companySettings);
+
+  const handleSaveWorkHours = () => {
+    updateWorkHours(localWorkHours);
   };
 
-  const handleAddUser = () => {
-    if (!newUser.name || !newUser.email) return;
-    
-    toast({
-      title: "Usuário adicionado",
-      description: `${newUser.name} foi adicionado como ${newUser.role === 'admin' ? 'administrador' : 'funcionário'}.`,
-    });
-    setNewUser({ name: '', email: '', role: 'employee' });
-  };
-
-  const handleSaveSchedule = () => {
-    toast({
-      title: "Configurações salvas",
-      description: "Horários de trabalho atualizados com sucesso.",
-    });
+  const handleSaveCompanySettings = () => {
+    updateCompanySettings(localCompanySettings);
   };
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="general">Geral</TabsTrigger>
-          <TabsTrigger value="users">Usuários</TabsTrigger>
-          <TabsTrigger value="companies">Empresas</TabsTrigger>
-          <TabsTrigger value="schedule">Horários</TabsTrigger>
-          <TabsTrigger value="audit">Auditoria</TabsTrigger>
+      <div className="flex items-center gap-2">
+        <Settings className="w-6 h-6" />
+        <h2 className="text-2xl font-bold">Painel de Administração</h2>
+      </div>
+
+      <Tabs defaultValue="general" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="general" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Geral
+          </TabsTrigger>
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Usuários
+          </TabsTrigger>
+          <TabsTrigger value="company" className="flex items-center gap-2">
+            <Building className="w-4 h-4" />
+            Empresa
+          </TabsTrigger>
+          <TabsTrigger value="schedule" className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            Horários
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Configurações Gerais
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Sincronização Automática</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Sincronizar dados automaticamente quando online
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.automaticSync}
-                      onCheckedChange={(checked) => updateSetting('automaticSync', checked)}
-                    />
+        <TabsContent value="general">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  Configurações de Segurança
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Autenticação de dois fatores</Label>
+                    <p className="text-sm text-gray-500">Adiciona uma camada extra de segurança</p>
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Geolocalização</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Registrar localização no ponto
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.geoLocation}
-                      onCheckedChange={(checked) => updateSetting('geoLocation', checked)}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Modo Escuro</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Ativar tema escuro
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.darkMode}
-                      onCheckedChange={(checked) => updateSetting('darkMode', checked)}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Multiempresa</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Gerenciar múltiplas empresas
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.multiCompany}
-                      onCheckedChange={(checked) => updateSetting('multiCompany', checked)}
-                    />
-                  </div>
+                  <Switch />
                 </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Modo Offline</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Permitir registro offline
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.offlineMode}
-                      onCheckedChange={(checked) => updateSetting('offlineMode', checked)}
-                    />
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Login obrigatório</Label>
+                    <p className="text-sm text-gray-500">Exige login para acessar o sistema</p>
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Log de Auditoria</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Registrar todas as atividades
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.auditLog}
-                      onCheckedChange={(checked) => updateSetting('auditLog', checked)}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Lembrete Inteligente</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Notificar sobre registros de ponto
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.smartReminder}
-                      onCheckedChange={(checked) => updateSetting('smartReminder', checked)}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Sistema Antifraude</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Verificações de segurança
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.antifraud}
-                      onCheckedChange={(checked) => updateSetting('antifraud', checked)}
-                    />
-                  </div>
+                  <Switch defaultChecked />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Sessão automática</Label>
+                    <p className="text-sm text-gray-500">Logout automático após inatividade</p>
+                  </div>
+                  <Switch />
+                </div>
+              </CardContent>
+            </Card>
 
-        <TabsContent value="users" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Gestão de Usuários
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="w-5 h-5" />
+                  Preferências do Sistema
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5 flex items-center gap-2">
+                    {darkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                    <Label>Modo escuro</Label>
+                  </div>
+                  <Switch checked={darkMode} onCheckedChange={toggleDarkMode} />
+                </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="user-name">Nome Completo</Label>
-                  <Input 
-                    id="user-name" 
-                    placeholder="Nome do usuário"
-                    value={newUser.name}
-                    onChange={(e) => setNewUser({...newUser, name: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="user-email">Email</Label>
-                  <Input 
-                    id="user-email" 
-                    type="email" 
-                    placeholder="email@exemplo.com"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="user-role">Tipo de Usuário</Label>
-                  <Select value={newUser.role} onValueChange={(value) => setNewUser({...newUser, role: value})}>
+                  <Label>Idioma do sistema</Label>
+                  <Select defaultValue="pt-BR">
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="employee">Funcionário</SelectItem>
-                      <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Español</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-end">
-                  <Button onClick={handleAddUser} className="bg-red-600 hover:bg-red-700 w-full">
-                    Adicionar Usuário
-                  </Button>
+                
+                <div className="space-y-2">
+                  <Label>Fuso horário</Label>
+                  <Select defaultValue="America/Sao_Paulo">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="America/Sao_Paulo">São Paulo (GMT-3)</SelectItem>
+                      <SelectItem value="America/New_York">Nova York (GMT-4)</SelectItem>
+                      <SelectItem value="Europe/London">Londres (GMT+1)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
-        <TabsContent value="companies" className="space-y-6">
+        <TabsContent value="users">
+          <UserManagement currentUser={currentUser} />
+        </TabsContent>
+
+        <TabsContent value="company">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building className="w-5 h-5" />
-                Gestão Multiempresa
+                Gestão Multi-empresa
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="company-name">Nome da Empresa</Label>
-                  <Input 
-                    id="company-name" 
+                  <Input
+                    id="company-name"
+                    value={localCompanySettings.name}
+                    onChange={(e) => setLocalCompanySettings({...localCompanySettings, name: e.target.value})}
                     placeholder="Nome da empresa"
-                    value={newCompany.name}
-                    onChange={(e) => setNewCompany({...newCompany, name: e.target.value})}
                   />
                 </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="cnpj">CNPJ</Label>
-                  <Input 
-                    id="cnpj" 
+                  <Label htmlFor="company-cnpj">CNPJ</Label>
+                  <Input
+                    id="company-cnpj"
+                    value={localCompanySettings.cnpj}
+                    onChange={(e) => setLocalCompanySettings({...localCompanySettings, cnpj: e.target.value})}
                     placeholder="00.000.000/0000-00"
-                    value={newCompany.cnpj}
-                    onChange={(e) => setNewCompany({...newCompany, cnpj: e.target.value})}
                   />
                 </div>
-                <div className="flex items-end">
-                  <Button onClick={handleAddCompany} className="bg-red-600 hover:bg-red-700 w-full">
-                    Adicionar Empresa
-                  </Button>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="company-address">Endereço</Label>
+                  <Input
+                    id="company-address"
+                    value={localCompanySettings.address}
+                    onChange={(e) => setLocalCompanySettings({...localCompanySettings, address: e.target.value})}
+                    placeholder="Endereço da empresa"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="company-phone">Telefone</Label>
+                  <Input
+                    id="company-phone"
+                    value={localCompanySettings.phone}
+                    onChange={(e) => setLocalCompanySettings({...localCompanySettings, phone: e.target.value})}
+                    placeholder="(11) 99999-9999"
+                  />
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <h4 className="font-semibold">Empresas Cadastradas</h4>
-                {companies.map(company => (
-                  <div key={company.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                    <div>
-                      <span className="font-medium">{company.name}</span>
-                      <span className="text-sm text-gray-500 ml-2">{company.cnpj}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="schedule" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Configuração de Horários
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="start-time">Horário de Entrada</Label>
-                  <Input 
-                    id="start-time" 
-                    type="time" 
-                    value={settings.workHours.startTime}
-                    onChange={(e) => updateSetting('workHours.startTime', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lunch-start">Início Almoço</Label>
-                  <Input 
-                    id="lunch-start" 
-                    type="time" 
-                    value={settings.workHours.lunchStart}
-                    onChange={(e) => updateSetting('workHours.lunchStart', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lunch-end">Fim Almoço</Label>
-                  <Input 
-                    id="lunch-end" 
-                    type="time" 
-                    value={settings.workHours.lunchEnd}
-                    onChange={(e) => updateSetting('workHours.lunchEnd', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="end-time">Horário de Saída</Label>
-                  <Input 
-                    id="end-time" 
-                    type="time" 
-                    value={settings.workHours.endTime}
-                    onChange={(e) => updateSetting('workHours.endTime', e.target.value)}
-                  />
-                </div>
-              </div>
-              <Button onClick={handleSaveSchedule} className="bg-red-600 hover:bg-red-700">
-                Salvar Configurações
+              <Button onClick={handleSaveCompanySettings} className="bg-red-600 hover:bg-red-700">
+                Salvar Configurações da Empresa
               </Button>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="audit" className="space-y-6">
+        <TabsContent value="schedule">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Log de Auditoria
+                <Clock className="w-5 h-5" />
+                Configurações de Horários
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                  <span>João Silva registrou entrada</span>
-                  <span className="text-gray-500">08:00 - 06/06/2025</span>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="daily-hours">Horas Diárias Obrigatórias</Label>
+                  <Input
+                    id="daily-hours"
+                    type="number"
+                    value={localWorkHours.dailyHours}
+                    onChange={(e) => setLocalWorkHours({...localWorkHours, dailyHours: parseInt(e.target.value)})}
+                    min="1"
+                    max="24"
+                  />
                 </div>
-                <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                  <span>Maria Santos registrou saída para almoço</span>
-                  <span className="text-gray-500">12:05 - 06/06/2025</span>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="lunch-duration">Duração do Almoço (minutos)</Label>
+                  <Input
+                    id="lunch-duration"
+                    type="number"
+                    value={localWorkHours.lunchDuration}
+                    onChange={(e) => setLocalWorkHours({...localWorkHours, lunchDuration: parseInt(e.target.value)})}
+                    min="30"
+                    max="120"
+                  />
                 </div>
-                <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                  <span>Admin alterou configurações do sistema</span>
-                  <span className="text-gray-500">07:45 - 06/06/2025</span>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                  <span>Pedro Costa registrou retorno do almoço</span>
-                  <span className="text-gray-500">13:00 - 06/06/2025</span>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                  <span>Novo funcionário Ana Lima adicionado</span>
-                  <span className="text-gray-500">07:30 - 06/06/2025</span>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="weekly-hours">Horas Semanais</Label>
+                  <Input
+                    id="weekly-hours"
+                    type="number"
+                    value={localWorkHours.weeklyHours}
+                    onChange={(e) => setLocalWorkHours({...localWorkHours, weeklyHours: parseInt(e.target.value)})}
+                    min="20"
+                    max="60"
+                  />
                 </div>
               </div>
+              
+              <div className="space-y-2">
+                <Label>Dias de Funcionamento</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map((day, index) => (
+                    <div key={day} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`day-${index}`}
+                        checked={localWorkHours.workingDays.includes(index)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setLocalWorkHours({
+                              ...localWorkHours,
+                              workingDays: [...localWorkHours.workingDays, index]
+                            });
+                          } else {
+                            setLocalWorkHours({
+                              ...localWorkHours,
+                              workingDays: localWorkHours.workingDays.filter(d => d !== index)
+                            });
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`day-${index}`} className="text-sm">{day}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <Button onClick={handleSaveWorkHours} className="bg-red-600 hover:bg-red-700">
+                Salvar Configurações de Horário
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
