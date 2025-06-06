@@ -18,6 +18,20 @@ export interface Settings {
   };
 }
 
+interface WorkHours {
+  dailyHours: number;
+  lunchDuration: number;
+  weeklyHours: number;
+  workingDays: number[];
+}
+
+interface CompanySettings {
+  name: string;
+  cnpj: string;
+  address: string;
+  phone: string;
+}
+
 export const useSettings = () => {
   const [settings, setSettings] = useState<Settings>({
     automaticSync: true,
@@ -34,6 +48,20 @@ export const useSettings = () => {
       lunchEnd: '13:00',
       endTime: '17:00'
     }
+  });
+
+  const [workHours, setWorkHours] = useState<WorkHours>({
+    dailyHours: 8,
+    lunchDuration: 60,
+    weeklyHours: 40,
+    workingDays: [0, 1, 2, 3, 4] // Monday to Friday
+  });
+
+  const [companySettings, setCompanySettings] = useState<CompanySettings>({
+    name: 'TEM PREÇO',
+    cnpj: '',
+    address: '',
+    phone: ''
   });
 
   const updateSetting = (key: keyof Settings | string, value: any) => {
@@ -55,5 +83,27 @@ export const useSettings = () => {
     }
   };
 
-  return { settings, updateSetting };
+  const toggleDarkMode = () => {
+    const newDarkMode = !settings.darkMode;
+    updateSetting('darkMode', newDarkMode);
+  };
+
+  const updateWorkHours = (newWorkHours: WorkHours) => {
+    setWorkHours(newWorkHours);
+  };
+
+  const updateCompanySettings = (newCompanySettings: CompanySettings) => {
+    setCompanySettings(newCompanySettings);
+  };
+
+  return { 
+    settings, 
+    updateSetting,
+    darkMode: settings.darkMode,
+    toggleDarkMode,
+    workHours,
+    updateWorkHours,
+    companySettings,
+    updateCompanySettings
+  };
 };
