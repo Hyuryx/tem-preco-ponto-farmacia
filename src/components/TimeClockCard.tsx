@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Wifi, WifiOff, Coffee, LogIn, LogOut, Utensils, Navigation, Info } from "lucide-react";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { CircularClockButton } from "./CircularClockButton";
+import { cn } from "@/lib/utils";
 
 interface TimeClockCardProps {
   currentUser: {
@@ -65,7 +66,7 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
 
   const getHoursBalance = () => {
     const { totalHours } = calculateHours(todayEntry);
-    const dailyBalance = totalHours - workHours.dailyHours; // Usar configuração de horas obrigatórias
+    const dailyBalance = totalHours - workHours.dailyHours;
     const totalBalance = todayEntry.accumulatedBalance + dailyBalance;
     return totalBalance;
   };
@@ -79,6 +80,63 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
     const balance = getHoursBalance();
     return balance >= 0 ? 'Horas Extras' : 'Horas Negativas';
   };
+
+  // Função para obter as configurações do botão único baseado no status
+  const getButtonConfig = () => {
+    switch (todayEntry.status) {
+      case 'not-started':
+        return {
+          onClick: clockIn,
+          disabled: false,
+          icon: LogIn,
+          label: "ENTRADA",
+          color: "bg-green-600 hover:bg-green-700"
+        };
+      case 'clocked-in':
+        return {
+          onClick: lunchOut,
+          disabled: !todayEntry.clockIn || !!todayEntry.lunchOut,
+          icon: Utensils,
+          label: "ALMOÇO",
+          color: "bg-yellow-600 hover:bg-yellow-700"
+        };
+      case 'lunch-break':
+        return {
+          onClick: lunchIn,
+          disabled: !todayEntry.lunchOut || !!todayEntry.lunchIn,
+          icon: Coffee,
+          label: "RETORNO",
+          color: "bg-blue-600 hover:bg-blue-700"
+        };
+      case 'lunch-return':
+        return {
+          onClick: clockOut,
+          disabled: !todayEntry.clockIn || (todayEntry.lunchOut && !todayEntry.lunchIn),
+          icon: LogOut,
+          label: "SAÍDA",
+          color: "bg-red-600 hover:bg-red-700"
+        };
+      case 'clocked-out':
+        return {
+          onClick: clockIn,
+          disabled: false,
+          icon: LogIn,
+          label: "NOVA ENTRADA",
+          color: "bg-green-600 hover:bg-green-700"
+        };
+      default:
+        return {
+          onClick: clockIn,
+          disabled: false,
+          icon: LogIn,
+          label: "ENTRADA",
+          color: "bg-green-600 hover:bg-green-700"
+        };
+    }
+  };
+
+  const buttonConfig = getButtonConfig();
+  const Icon = buttonConfig.icon;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -144,39 +202,19 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
             )}
           </div>
 
-          {/* Botões circulares para registro de ponto */}
-          <div className="grid grid-cols-2 gap-6 justify-items-center">
-            <CircularClockButton
-              onClick={clockIn}
-              disabled={todayEntry.status === 'clocked-in' || todayEntry.status === 'lunch-break' || todayEntry.status === 'lunch-return'}
-              icon={LogIn}
-              label="ENTRADA"
-              color="green"
-            />
-            
-            <CircularClockButton
-              onClick={lunchOut}
-              disabled={!todayEntry.clockIn || todayEntry.status === 'lunch-break' || todayEntry.status === 'clocked-out' || !!todayEntry.lunchOut}
-              icon={Utensils}
-              label="ALMOÇO"
-              color="yellow"
-            />
-            
-            <CircularClockButton
-              onClick={lunchIn}
-              disabled={!todayEntry.lunchOut || todayEntry.status !== 'lunch-break' || !!todayEntry.lunchIn}
-              icon={Coffee}
-              label="RETORNO"
-              color="blue"
-            />
-            
-            <CircularClockButton
-              onClick={clockOut}
-              disabled={!todayEntry.clockIn || (todayEntry.lunchOut && !todayEntry.lunchIn)}
-              icon={LogOut}
-              label="SAÍDA"
-              color="red"
-            />
+          {/* Botão único circular para registro de ponto */}
+          <div className="flex flex-col items-center gap-4">
+            <Button
+              onClick={buttonConfig.onClick}
+              disabled={buttonConfig.disabled}
+              className={cn(
+                "w-32 h-32 rounded-full flex flex-col items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed",
+                buttonConfig.color
+              )}
+            >
+              <Icon className="w-10 h-10 mb-2" />
+              <span className="text-sm font-bold">{buttonConfig.label}</span>
+            </Button>
           </div>
         </CardContent>
       </Card>
