@@ -36,7 +36,6 @@ export function DatePicker({ selected, onSelect, placeholder = "Selecione uma da
           mode="single"
           selected={selected}
           onSelect={onSelect}
-          initialFocus
           locale={ptBR}
         />
       </PopoverContent>
