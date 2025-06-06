@@ -2,9 +2,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Calendar, LogOut, Printer } from "lucide-react";
+import { Clock, LogOut, Printer } from "lucide-react";
 import { TimeClockCard } from "@/components/TimeClockCard";
-import { VacationManagement } from "@/components/VacationManagement";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -89,14 +88,10 @@ export const EmployeeDashboard = ({ currentUser }: EmployeeDashboardProps) => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="clock" className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
               Registro de Ponto
-            </TabsTrigger>
-            <TabsTrigger value="vacation" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Férias e Justificativas
             </TabsTrigger>
           </TabsList>
 
@@ -106,10 +101,6 @@ export const EmployeeDashboard = ({ currentUser }: EmployeeDashboardProps) => {
               <p className="text-gray-600">Registre sua entrada, pausas e saída do trabalho</p>
             </div>
             <TimeClockCard currentUser={currentUser} />
-          </TabsContent>
-
-          <TabsContent value="vacation">
-            <VacationManagement currentUser={currentUser} />
           </TabsContent>
         </Tabs>
       </div>
