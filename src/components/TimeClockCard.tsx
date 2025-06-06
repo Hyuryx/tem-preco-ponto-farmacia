@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Wifi, WifiOff, Coffee, LogIn, LogOut, Utensils, Navigation, Info } from "lucide-react";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { CircularClockButton } from "./CircularClockButton";
 
 interface TimeClockCardProps {
   currentUser: {
@@ -19,7 +19,7 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
-  const { getTodayEntry, clockIn, lunchOut, lunchIn, clockOut, calculateHours } = useTimeTracking(currentUser);
+  const { getTodayEntry, clockIn, lunchOut, lunchIn, clockOut, calculateHours, workHours } = useTimeTracking(currentUser);
   const location = useGeolocation();
   const todayEntry = getTodayEntry();
 
@@ -65,7 +65,7 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
 
   const getHoursBalance = () => {
     const { totalHours } = calculateHours(todayEntry);
-    const dailyBalance = totalHours - 9; // 9 horas obrigatórias
+    const dailyBalance = totalHours - workHours.dailyHours; // Usar configuração de horas obrigatórias
     const totalBalance = todayEntry.accumulatedBalance + dailyBalance;
     return totalBalance;
   };
@@ -144,42 +144,39 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Button 
+          {/* Botões circulares para registro de ponto */}
+          <div className="grid grid-cols-2 gap-6 justify-items-center">
+            <CircularClockButton
               onClick={clockIn}
               disabled={todayEntry.status === 'clocked-in' || todayEntry.status === 'lunch-break' || todayEntry.status === 'lunch-return'}
-              className="bg-green-600 hover:bg-green-700 h-12 flex items-center gap-2"
-            >
-              <LogIn className="w-4 h-4" />
-              ENTRADA
-            </Button>
+              icon={LogIn}
+              label="ENTRADA"
+              color="green"
+            />
             
-            <Button 
+            <CircularClockButton
               onClick={lunchOut}
               disabled={!todayEntry.clockIn || todayEntry.status === 'lunch-break' || todayEntry.status === 'clocked-out' || !!todayEntry.lunchOut}
-              className="bg-yellow-600 hover:bg-yellow-700 h-12 flex items-center gap-2"
-            >
-              <Utensils className="w-4 h-4" />
-              ALMOÇO
-            </Button>
+              icon={Utensils}
+              label="ALMOÇO"
+              color="yellow"
+            />
             
-            <Button 
+            <CircularClockButton
               onClick={lunchIn}
               disabled={!todayEntry.lunchOut || todayEntry.status !== 'lunch-break' || !!todayEntry.lunchIn}
-              className="bg-blue-600 hover:bg-blue-700 h-12 flex items-center gap-2"
-            >
-              <Coffee className="w-4 h-4" />
-              RETORNO
-            </Button>
+              icon={Coffee}
+              label="RETORNO"
+              color="blue"
+            />
             
-            <Button 
+            <CircularClockButton
               onClick={clockOut}
               disabled={!todayEntry.clockIn || (todayEntry.lunchOut && !todayEntry.lunchIn)}
-              className="bg-red-600 hover:bg-red-700 h-12 flex items-center gap-2"
-            >
-              <LogOut className="w-4 h-4" />
-              SAÍDA
-            </Button>
+              icon={LogOut}
+              label="SAÍDA"
+              color="red"
+            />
           </div>
         </CardContent>
       </Card>
@@ -189,16 +186,17 @@ export const TimeClockCard = ({ currentUser }: TimeClockCardProps) => {
           <CardTitle>Resumo do Dia</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Informações sobre jornada de trabalho */}
+          {/* Informações sobre jornada de trabalho baseada nas configurações */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-2">
               <Info className="w-4 h-4 text-blue-600" />
               <span className="font-medium text-sm text-blue-800">Jornada de Trabalho</span>
             </div>
             <div className="text-sm text-blue-700">
-              <div>• Horas obrigatórias: <span className="font-semibold">9h</span></div>
-              <div>• Intervalo para almoço: <span className="font-semibold">1h</span></div>
-              <div>• Total do dia: <span className="font-semibold">10h</span></div>
+              <div>• Horas obrigatórias: <span className="font-semibold">{workHours.dailyHours}h</span></div>
+              <div>• Intervalo para almoço: <span className="font-semibold">{workHours.lunchDuration}min</span></div>
+              <div>• Total do dia: <span className="font-semibold">{workHours.dailyHours + (workHours.lunchDuration/60)}h</span></div>
+              <div>• Dias de trabalho: <span className="font-semibold">{workHours.workingDays.length} dias/semana</span></div>
             </div>
           </div>
 

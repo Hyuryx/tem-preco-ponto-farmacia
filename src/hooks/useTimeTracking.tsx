@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useSettings } from '@/hooks/useSettings';
 
 export interface TimeEntry {
   id: string;
@@ -124,6 +125,7 @@ export const useTimeTracking = (currentUser: any) => {
     }
   ]);
   const { toast } = useToast();
+  const { workHours } = useSettings();
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -226,7 +228,7 @@ export const useTimeTracking = (currentUser: any) => {
 
     let totalMinutes = (clockOutTime.getTime() - clockInTime.getTime()) / (1000 * 60);
 
-    // Subtrair tempo de almoço se aplicável
+    // Subtrair tempo de almoço baseado nas configurações
     if (entry.lunchOut && entry.lunchIn) {
       const lunchOutTime = new Date(`${entry.date}T${entry.lunchOut}`);
       const lunchInTime = new Date(`${entry.date}T${entry.lunchIn}`);
@@ -242,8 +244,9 @@ export const useTimeTracking = (currentUser: any) => {
 
     const totalHours = Math.max(0, totalMinutes / 60);
     
-    // Calcular saldo do dia (9 horas obrigatórias)
-    const dailyBalance = totalHours - 9;
+    // Usar as configurações de horário para calcular o saldo
+    const dailyRequiredHours = workHours.dailyHours;
+    const dailyBalance = totalHours - dailyRequiredHours;
     
     // Se o dia foi finalizado, atualizar saldo acumulado
     let newAccumulatedBalance = entry.accumulatedBalance;
@@ -540,6 +543,7 @@ export const useTimeTracking = (currentUser: any) => {
     addCompany,
     updateCompany,
     deleteCompany,
-    calculateHours
+    calculateHours,
+    workHours
   };
 };
