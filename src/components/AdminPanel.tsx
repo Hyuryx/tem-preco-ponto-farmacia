@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { Settings, Users, Building, Clock, Shield, Globe, Moon, Sun } from "luci
 import { useSettings } from "@/hooks/useSettings";
 import { UserManagement } from "@/components/UserManagement";
 import { CompanyManagement } from "@/components/CompanyManagement";
+import { useToast } from "@/hooks/use-toast";
 
 interface AdminPanelProps {
   currentUser?: {
@@ -21,16 +23,57 @@ interface AdminPanelProps {
 
 export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", company: "TEM PREÇO" } }: AdminPanelProps) => {
   const { 
+    settings,
+    updateSetting,
     darkMode, 
     toggleDarkMode, 
     workHours, 
     updateWorkHours
   } = useSettings();
 
+  const { toast } = useToast();
   const [localWorkHours, setLocalWorkHours] = useState(workHours);
 
   const handleSaveWorkHours = () => {
     updateWorkHours(localWorkHours);
+    toast({
+      title: "Configurações salvas",
+      description: "As configurações de horário foram atualizadas com sucesso.",
+    });
+  };
+
+  const handleLanguageChange = (language: string) => {
+    updateSetting('language', language);
+    toast({
+      title: "Idioma alterado",
+      description: `Idioma do sistema alterado para ${language === 'pt-BR' ? 'Português' : language === 'en' ? 'English' : 'Español'}.`,
+    });
+  };
+
+  const handleTimezoneChange = (timezone: string) => {
+    updateSetting('timezone', timezone);
+    toast({
+      title: "Fuso horário alterado",
+      description: "Fuso horário do sistema foi atualizado.",
+    });
+  };
+
+  const getLanguageLabel = (lang: string) => {
+    switch (lang) {
+      case 'pt-BR': return 'Português (Brasil)';
+      case 'en': return 'English';
+      case 'es': return 'Español';
+      default: return lang;
+    }
+  };
+
+  const getTimezoneLabel = (tz: string) => {
+    switch (tz) {
+      case 'America/Sao_Paulo': return 'São Paulo (GMT-3)';
+      case 'America/New_York': return 'Nova York (GMT-4)';
+      case 'Europe/London': return 'Londres (GMT+1)';
+      default: return tz;
+    }
   };
 
   return (
@@ -114,9 +157,9 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
                 
                 <div className="space-y-2">
                   <Label>Idioma do sistema</Label>
-                  <Select defaultValue="pt-BR">
+                  <Select value={settings.language} onValueChange={handleLanguageChange}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder={getLanguageLabel(settings.language)} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
@@ -128,9 +171,9 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
                 
                 <div className="space-y-2">
                   <Label>Fuso horário</Label>
-                  <Select defaultValue="America/Sao_Paulo">
+                  <Select value={settings.timezone} onValueChange={handleTimezoneChange}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder={getTimezoneLabel(settings.timezone)} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="America/Sao_Paulo">São Paulo (GMT-3)</SelectItem>
@@ -168,7 +211,7 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
                     id="daily-hours"
                     type="number"
                     value={localWorkHours.dailyHours}
-                    onChange={(e) => setLocalWorkHours({...localWorkHours, dailyHours: parseInt(e.target.value)})}
+                    onChange={(e) => setLocalWorkHours({...localWorkHours, dailyHours: parseInt(e.target.value) || 8})}
                     min="1"
                     max="24"
                   />
@@ -180,7 +223,7 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
                     id="lunch-duration"
                     type="number"
                     value={localWorkHours.lunchDuration}
-                    onChange={(e) => setLocalWorkHours({...localWorkHours, lunchDuration: parseInt(e.target.value)})}
+                    onChange={(e) => setLocalWorkHours({...localWorkHours, lunchDuration: parseInt(e.target.value) || 60})}
                     min="30"
                     max="120"
                   />
@@ -192,7 +235,7 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
                     id="weekly-hours"
                     type="number"
                     value={localWorkHours.weeklyHours}
-                    onChange={(e) => setLocalWorkHours({...localWorkHours, weeklyHours: parseInt(e.target.value)})}
+                    onChange={(e) => setLocalWorkHours({...localWorkHours, weeklyHours: parseInt(e.target.value) || 40})}
                     min="20"
                     max="60"
                   />
@@ -202,7 +245,7 @@ export const AdminPanel = ({ currentUser = { name: "Admin", role: "admin", compa
               <div className="space-y-2">
                 <Label>Dias de Funcionamento</Label>
                 <div className="flex gap-2 flex-wrap">
-                  {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map((day, index) => (
+                  {['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'].map((day, index) => (
                     <div key={day} className="flex items-center space-x-2">
                       <input
                         type="checkbox"

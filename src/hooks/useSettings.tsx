@@ -10,6 +10,8 @@ export interface Settings {
   auditLog: boolean;
   smartReminder: boolean;
   antifraud: boolean;
+  language: string;
+  timezone: string;
   workHours: {
     startTime: string;
     lunchStart: string;
@@ -42,6 +44,8 @@ export const useSettings = () => {
     auditLog: true,
     smartReminder: true,
     antifraud: true,
+    language: 'pt-BR',
+    timezone: 'America/Sao_Paulo',
     workHours: {
       startTime: '08:00',
       lunchStart: '12:00',
@@ -54,7 +58,7 @@ export const useSettings = () => {
     dailyHours: 8,
     lunchDuration: 60,
     weeklyHours: 40,
-    workingDays: [0, 1, 2, 3, 4] // Monday to Friday
+    workingDays: [1, 2, 3, 4, 5] // Monday to Friday
   });
 
   const [companySettings, setCompanySettings] = useState<CompanySettings>({
@@ -72,7 +76,16 @@ export const useSettings = () => {
 
     if (savedSettings) {
       try {
-        setSettings(JSON.parse(savedSettings));
+        const parsed = JSON.parse(savedSettings);
+        setSettings(parsed);
+        // Aplicar modo escuro se estiver ativado
+        if (parsed.darkMode) {
+          document.documentElement.classList.add('dark');
+        }
+        // Aplicar idioma se disponível
+        if (parsed.language) {
+          document.documentElement.setAttribute('lang', parsed.language);
+        }
       } catch (error) {
         console.error('Erro ao carregar configurações:', error);
       }
@@ -100,6 +113,10 @@ export const useSettings = () => {
       document.documentElement.classList.toggle('dark', value);
     }
     
+    if (key === 'language') {
+      document.documentElement.setAttribute('lang', value);
+    }
+    
     if (key.includes('.')) {
       const [parent, child] = key.split('.');
       const newSettings = {
@@ -116,6 +133,8 @@ export const useSettings = () => {
       setSettings(newSettings);
       localStorage.setItem('appSettings', JSON.stringify(newSettings));
     }
+    
+    console.log('Configuração atualizada:', key, value);
   };
 
   const toggleDarkMode = () => {

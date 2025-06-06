@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building, Edit, Trash2 } from "lucide-react";
+import { Building, Edit, Trash2, MapPin } from "lucide-react";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 interface CompanyManagementProps {
   currentUser: {
@@ -29,6 +30,7 @@ export const CompanyManagement = ({ currentUser }: CompanyManagementProps) => {
   });
 
   const { companies, addCompany, updateCompany, deleteCompany } = useTimeTracking(currentUser);
+  const location = useGeolocation();
 
   const handleAddCompany = () => {
     if (!newCompany.name || !newCompany.cnpj) {
@@ -58,6 +60,20 @@ export const CompanyManagement = ({ currentUser }: CompanyManagementProps) => {
   const openEditDialog = (company: any) => {
     setEditingCompany({ ...company });
     setIsEditDialogOpen(true);
+  };
+
+  const fillAddressFromLocation = () => {
+    if (location.address && location.city && location.country) {
+      const fullAddress = `${location.address}, ${location.city}, ${location.country}`;
+      setNewCompany({...newCompany, address: fullAddress});
+    }
+  };
+
+  const fillEditAddressFromLocation = () => {
+    if (location.address && location.city && location.country && editingCompany) {
+      const fullAddress = `${location.address}, ${location.city}, ${location.country}`;
+      setEditingCompany({...editingCompany, address: fullAddress});
+    }
   };
 
   return (
@@ -100,12 +116,28 @@ export const CompanyManagement = ({ currentUser }: CompanyManagementProps) => {
                 </div>
                 <div>
                   <Label htmlFor="company-address">Endereço</Label>
-                  <Input
-                    id="company-address"
-                    value={newCompany.address}
-                    onChange={(e) => setNewCompany({...newCompany, address: e.target.value})}
-                    placeholder="Endereço da empresa"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="company-address"
+                      value={newCompany.address}
+                      onChange={(e) => setNewCompany({...newCompany, address: e.target.value})}
+                      placeholder="Endereço da empresa"
+                      className="flex-1"
+                    />
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={fillAddressFromLocation}
+                      disabled={location.loading || !location.address}
+                      title="Preencher com localização atual"
+                    >
+                      <MapPin className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {location.loading && (
+                    <p className="text-xs text-gray-500 mt-1">Obtendo localização...</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="company-phone">Telefone</Label>
@@ -198,12 +230,25 @@ export const CompanyManagement = ({ currentUser }: CompanyManagementProps) => {
                 </div>
                 <div>
                   <Label htmlFor="edit-company-address">Endereço</Label>
-                  <Input
-                    id="edit-company-address"
-                    value={editingCompany.address}
-                    onChange={(e) => setEditingCompany({...editingCompany, address: e.target.value})}
-                    placeholder="Endereço da empresa"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="edit-company-address"
+                      value={editingCompany.address}
+                      onChange={(e) => setEditingCompany({...editingCompany, address: e.target.value})}
+                      placeholder="Endereço da empresa"
+                      className="flex-1"
+                    />
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={fillEditAddressFromLocation}
+                      disabled={location.loading || !location.address}
+                      title="Preencher com localização atual"
+                    >
+                      <MapPin className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="edit-company-phone">Telefone</Label>
