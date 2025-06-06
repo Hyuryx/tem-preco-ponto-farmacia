@@ -248,22 +248,13 @@ export const useTimeTracking = (currentUser: any) => {
     const dailyRequiredHours = workHours.dailyHours;
     const dailyBalance = totalHours - dailyRequiredHours;
     
-    // Se o dia foi finalizado, atualizar saldo acumulado
-    let newAccumulatedBalance = entry.accumulatedBalance;
-    if (entry.clockOut && entry.status === 'clocked-out') {
-      newAccumulatedBalance = entry.accumulatedBalance + dailyBalance;
-      saveAccumulatedBalance(entry.userId, newAccumulatedBalance);
-    }
-    
-    // Para cálculo em tempo real durante o trabalho
-    const currentBalance = entry.clockOut ? newAccumulatedBalance : entry.accumulatedBalance + dailyBalance;
-    
-    const overtimeHours = Math.max(0, currentBalance);
+    // Retornar o saldo acumulado atual sem modificá-lo (só modifica quando finalizar o dia)
+    const overtimeHours = Math.max(0, entry.accumulatedBalance + dailyBalance);
 
     return { 
       totalHours, 
       overtimeHours, 
-      accumulatedBalance: entry.clockOut ? newAccumulatedBalance : entry.accumulatedBalance 
+      accumulatedBalance: entry.accumulatedBalance 
     };
   };
 
@@ -271,7 +262,15 @@ export const useTimeTracking = (currentUser: any) => {
     const calculated = calculateHours(updatedEntry);
     updatedEntry.totalHours = calculated.totalHours;
     updatedEntry.overtimeHours = calculated.overtimeHours;
-    updatedEntry.accumulatedBalance = calculated.accumulatedBalance;
+    
+    // Só atualiza o saldo acumulado quando o dia for finalizado
+    if (updatedEntry.status === 'clocked-out' && updatedEntry.clockOut) {
+      const dailyRequiredHours = workHours.dailyHours;
+      const dailyBalance = calculated.totalHours - dailyRequiredHours;
+      const newAccumulatedBalance = updatedEntry.accumulatedBalance + dailyBalance;
+      updatedEntry.accumulatedBalance = newAccumulatedBalance;
+      saveAccumulatedBalance(updatedEntry.userId, newAccumulatedBalance);
+    }
 
     setTimeEntries(prev => {
       const filtered = prev.filter(entry => entry.id !== updatedEntry.id);
@@ -300,27 +299,37 @@ export const useTimeTracking = (currentUser: any) => {
     const timeString = now.toTimeString().slice(0, 5);
     const entry = getTodayEntry();
     
-    // Verificar se já não está trabalhando
-    if (entry.status === 'clocked-in' || entry.status === 'lunch-break' || entry.status === 'lunch-return') {
+    // Se já finalizou o dia, permitir nova entrada no mesmo dia
+    if (entry.status === 'clocked-out') {
+      // Criar nova entrada mantendo o saldo acumulado atual
+      const newEntryId = `${currentUser.name}-${today}-${Date.now()}`;
+      const newEntry = {
+        ...entry,
+        id: newEntryId,
+        clockIn: timeString,
+        lunchOut: undefined,
+        lunchIn: undefined,
+        clockOut: undefined,
+        totalHours: 0,
+        overtimeHours: 0,
+        status: 'clocked-in' as const
+      };
+      updateTimeEntry(newEntry);
+    } else if (entry.status === 'not-started') {
+      // Primeira entrada do dia
+      const updatedEntry = {
+        ...entry,
+        clockIn: timeString,
+        status: 'clocked-in' as const
+      };
+      updateTimeEntry(updatedEntry);
+    } else {
       toast({
         title: "Aviso",
         description: "Você já está com o ponto ativo.",
         variant: "destructive"
       });
       return;
-    }
-
-    // Sempre criar uma nova entrada ou resetar se já finalizado
-    if (entry.status === 'clocked-out' || !entry.clockIn) {
-      const newEntry = {
-        ...entry,
-        clockIn: timeString,
-        lunchOut: undefined,
-        lunchIn: undefined,
-        clockOut: undefined,
-        status: 'clocked-in' as const
-      };
-      updateTimeEntry(newEntry);
     }
 
     toast({
@@ -432,8 +441,8 @@ export const useTimeTracking = (currentUser: any) => {
 
     updateTimeEntry(updatedEntry);
     toast({
-      title: "Ponto registrado",
-      description: `Saída registrada às ${timeString}`,
+      title: "Expediente finalizado",
+      description: `Saída registrada às ${timeString}. Tenha um bom descanso!`,
     });
   };
 
