@@ -7,53 +7,53 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Clock, Users, BarChart3, MapPin, Calculator, Eye, EyeOff } from "lucide-react";
 import { CheckedState } from "@radix-ui/react-checkbox";
+import { useNavigate } from "react-router-dom";
+
+// Usuários de demonstração
+const users = [
+  { id: 1, email: "admin@tempreco.com", password: "admin123", role: "admin", name: "João Silva" },
+  { id: 2, email: "funcionario@tempreco.com", password: "func123", role: "employee", name: "Maria Santos" }
+];
 
 const Index = () => {
-  const [loginData, setLoginData] = useState({ username: "", password: "" });
-  const [registerData, setRegisterData] = useState({ 
-    name: "", 
-    email: "", 
-    password: "", 
-    confirmPassword: "",
-    role: "employee" 
-  });
-  const [resetEmail, setResetEmail] = useState("");
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [rememberLogin, setRememberLogin] = useState(false);
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [isResetMode, setIsResetMode] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Login realizado",
-      description: "Bem-vindo ao sistema Tem Preço!",
-    });
-  };
+    
+    // Verificar credenciais
+    const user = users.find(
+      u => u.email === loginData.email && u.password === loginData.password
+    );
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (registerData.password !== registerData.confirmPassword) {
+    if (user) {
+      // Salvar dados do usuário no localStorage
+      localStorage.setItem('currentUser', JSON.stringify({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        company: "Farmácia Tem Preço"
+      }));
+
       toast({
-        title: "Erro",
-        description: "As senhas não coincidem",
+        title: "Login realizado com sucesso",
+        description: `Bem-vindo, ${user.name}!`,
+      });
+
+      // Redirecionar para o dashboard
+      navigate("/dashboard");
+    } else {
+      toast({
+        title: "Erro no login",
+        description: "Email ou senha incorretos",
         variant: "destructive",
       });
-      return;
     }
-    toast({
-      title: "Cadastro realizado",
-      description: "Conta criada com sucesso!",
-    });
-  };
-
-  const handlePasswordReset = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Email enviado",
-      description: "Instruções de recuperação enviadas para seu email",
-    });
   };
 
   const handleRememberChange = (checked: CheckedState) => {
@@ -70,14 +70,14 @@ const Index = () => {
               TEM PREÇO
             </h1>
             <h2 className="text-3xl lg:text-4xl font-semibold text-gray-800">
-              Inteligência em
+              Sistema de
               <br />
-              Marcação e Gestão
+              Controle de Ponto
               <br />
-              de Ponto
+              Inteligente
             </h2>
             <p className="text-lg text-gray-600 max-w-lg mx-auto lg:mx-0">
-              Mais praticidade e segurança no controle e gestão online da jornada de trabalho da sua equipe
+              Controle completo da jornada de trabalho com segurança e praticidade
             </p>
           </div>
 
@@ -109,194 +109,83 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Rating */}
-          <div className="flex items-center justify-center lg:justify-start gap-2 mt-6">
-            <span className="text-2xl font-bold text-gray-800">4.8</span>
-            <div className="flex text-yellow-400">
-              {"★".repeat(5)}
+          {/* Demo credentials */}
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <h3 className="font-semibold text-gray-800 mb-4">Credenciais de Demonstração:</h3>
+            <div className="space-y-2 text-sm">
+              <div>
+                <strong>Administrador:</strong><br />
+                Email: admin@tempreco.com<br />
+                Senha: admin123
+              </div>
+              <div>
+                <strong>Funcionário:</strong><br />
+                Email: funcionario@tempreco.com<br />
+                Senha: func123
+              </div>
             </div>
-            <span className="text-gray-500">+1000 Avaliações</span>
           </div>
         </div>
 
-        {/* Right side - Login form following the image pattern */}
+        {/* Right side - Login form */}
         <div className="w-full max-w-md mx-auto">
           <Card className="shadow-2xl border-0 bg-white">
             <CardHeader className="text-center pb-6">
-              {!isRegisterMode && !isResetMode && (
-                <CardTitle className="text-4xl font-bold text-gray-700 mb-6">
-                  LOGIN
-                </CardTitle>
-              )}
-              {isRegisterMode && (
-                <CardTitle className="text-3xl font-bold text-gray-700 mb-6">
-                  CADASTRO
-                </CardTitle>
-              )}
-              {isResetMode && (
-                <CardTitle className="text-3xl font-bold text-gray-700 mb-6">
-                  RECUPERAR SENHA
-                </CardTitle>
-              )}
+              <CardTitle className="text-4xl font-bold text-gray-700 mb-6">
+                LOGIN
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 px-8 pb-8">
-              {!isRegisterMode && !isResetMode && (
-                <form onSubmit={handleLogin} className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-gray-600 font-medium">Email</label>
-                    <Input
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={loginData.username}
-                      onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
-                      className="bg-gray-100 border-0 text-gray-600 placeholder:text-gray-400 text-base h-12 rounded-md"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2 relative">
-                    <label className="text-gray-600 font-medium">Senha</label>
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Sua senha"
-                      value={loginData.password}
-                      onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                      className="bg-gray-100 border-0 text-gray-600 placeholder:text-gray-400 text-base h-12 rounded-md pr-10"
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-2 top-8 h-8 w-8 p-0"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="remember"
-                        checked={rememberLogin}
-                        onCheckedChange={handleRememberChange}
-                        className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
-                      />
-                      <label htmlFor="remember" className="text-sm text-gray-600">
-                        Lembrar-me
-                      </label>
-                    </div>
-                    <Button 
-                      variant="link" 
-                      className="text-sm text-blue-400 p-0 h-auto font-normal"
-                      onClick={() => setIsResetMode(true)}
-                    >
-                      Esqueceu a Senha?
-                    </Button>
-                  </div>
-
-                  <Button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white h-12 mt-6 rounded-md text-lg font-medium">
-                    Entrar
+              <form onSubmit={handleLogin} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-gray-600 font-medium">Email</label>
+                  <Input
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={loginData.email}
+                    onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                    className="bg-gray-100 border-0 text-gray-600 placeholder:text-gray-400 text-base h-12 rounded-md"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2 relative">
+                  <label className="text-gray-600 font-medium">Senha</label>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Sua senha"
+                    value={loginData.password}
+                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                    className="bg-gray-100 border-0 text-gray-600 placeholder:text-gray-400 text-base h-12 rounded-md pr-10"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-8 h-8 w-8 p-0"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
+                </div>
 
-                  <div className="text-center mt-6">
-                    <p className="text-gray-600 mb-2">
-                      Não Tem Uma Conta?{" "}
-                      <Button 
-                        variant="link" 
-                        className="text-blue-400 p-0 h-auto font-normal"
-                        onClick={() => setIsRegisterMode(true)}
-                      >
-                        Inscrever-se
-                      </Button>
-                    </p>
-                  </div>
-                </form>
-              )}
+                <div className="flex items-center space-x-2 mt-4">
+                  <Checkbox
+                    id="remember"
+                    checked={rememberLogin}
+                    onCheckedChange={handleRememberChange}
+                    className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                  />
+                  <label htmlFor="remember" className="text-sm text-gray-600">
+                    Lembrar-me
+                  </label>
+                </div>
 
-              {isRegisterMode && (
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <Input
-                      placeholder="Nome Completo"
-                      value={registerData.name}
-                      onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                      className="bg-gray-100 border-0 h-12"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Input
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={registerData.email}
-                      onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                      className="bg-gray-100 border-0 h-12"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Input
-                      type="password"
-                      placeholder="Sua senha"
-                      value={registerData.password}
-                      onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                      className="bg-gray-100 border-0 h-12"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Input
-                      type="password"
-                      placeholder="Confirme sua senha"
-                      value={registerData.confirmPassword}
-                      onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
-                      className="bg-gray-100 border-0 h-12"
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 h-12">
-                    CADASTRAR
-                  </Button>
-                  <div className="text-center">
-                    <Button 
-                      variant="link" 
-                      className="text-sm text-blue-400"
-                      onClick={() => setIsRegisterMode(false)}
-                    >
-                      Voltar ao Login
-                    </Button>
-                  </div>
-                </form>
-              )}
-
-              {isResetMode && (
-                <form onSubmit={handlePasswordReset} className="space-y-4">
-                  <div className="space-y-2">
-                    <Input
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                      className="bg-gray-100 border-0 h-12"
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 h-12">
-                    ENVIAR INSTRUÇÕES
-                  </Button>
-                  <div className="text-center">
-                    <Button 
-                      variant="link" 
-                      className="text-sm text-blue-400"
-                      onClick={() => setIsResetMode(false)}
-                    >
-                      Voltar ao Login
-                    </Button>
-                  </div>
-                </form>
-              )}
+                <Button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white h-12 mt-6 rounded-md text-lg font-medium">
+                  Entrar
+                </Button>
+              </form>
             </CardContent>
           </Card>
 
@@ -306,15 +195,6 @@ const Index = () => {
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Floating WhatsApp button */}
-      <div className="fixed bottom-6 left-6">
-        <Button size="icon" className="rounded-full bg-green-500 hover:bg-green-600 shadow-lg">
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.25 7.11l-2.18 2.18c-.28-.15-.59-.29-.91-.41l.27-2.91c.61.26 1.2.61 1.73 1.06l1.09-1.09c-.83-.78-1.79-1.39-2.83-1.8L12.04 4.5 9.92 6.14c-1.04.41-2 1.02-2.83 1.8l1.09 1.09c.53-.45 1.12-.8 1.73-1.06l.27 2.91c-.32.12-.63.26-.91.41L7.09 9.11C6.24 10.55 5.78 12.24 5.78 14c0 .85.13 1.68.38 2.47l1.34-.35c-.16-.69-.25-1.4-.25-2.12 0-1.39.35-2.7.97-3.84l1.52 1.52c.5-.24 1.04-.42 1.6-.54l-.2-2.2c.47-.06.95-.09 1.44-.09s.97.03 1.44.09l-.2 2.2c.56.12 1.1.3 1.6.54l1.52-1.52c.62 1.14.97 2.45.97 3.84 0 .72-.09 1.43-.25 2.12l1.34.35c.25-.79.38-1.62.38-2.47 0-1.76-.46-3.45-1.31-4.89z"/>
-          </svg>
-        </Button>
       </div>
     </div>
   );
